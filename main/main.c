@@ -36,8 +36,6 @@ void app_main(void)
 
     float temperature = 0.0f;
     float humidity = 0.0f;
-    char temp_display_str[LCD_COLS + 1];
-    char hum_display_str[LCD_COLS + 1];
 
     while (1) {
         esp_err_t ret = read_dht_data(&temperature, &humidity);
@@ -56,10 +54,7 @@ void app_main(void)
             ESP_LOGE(APP_TAG, "Failed to Clear Screen");
         }
 
-        snprintf(temp_display_str, sizeof(temp_display_str), "Temp: %.1f C", temperature);
-        snprintf(hum_display_str, sizeof(hum_display_str), "Hum: %.1f %%", humidity);
-
-        ret = lcd_i2c_write_string(lcd_handle, temp_display_str);
+        ret = lcd_i2c_write_string(lcd_handle, "Temp: %.2f C", temperature);
         if (ret == ESP_OK) {
             ESP_LOGI(APP_TAG, "Temperature Displayed Successfully");
         } else {
@@ -67,7 +62,7 @@ void app_main(void)
         }
 
         lcd_i2c_set_cursor(lcd_handle, 0, 1);
-        ret = lcd_i2c_write_string(lcd_handle, hum_display_str);
+        ret = lcd_i2c_write_string(lcd_handle, "Humidity: %.1f %%", humidity);
         if (ret == ESP_OK) {
             ESP_LOGI(APP_TAG, "Humidity Displayed Successfully");
         } else {

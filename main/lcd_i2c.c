@@ -1,5 +1,6 @@
 // lcd_i2c.c
 
+#include <stdarg.h>
 #include "lcd_i2c.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -285,7 +286,7 @@ esp_err_t lcd_i2c_write_char(lcd_i2c_handle_t* lcd, char c) {
     return _lcd_send_data(lcd, (uint8_t) c);
 }
 
-esp_err_t lcd_i2c_write_string(lcd_i2c_handle_t* lcd, const char *str) {
+esp_err_t lcd_i2c_write_string(lcd_i2c_handle_t* lcd, const char *str, ...) {
     if (lcd == NULL) {
         ESP_LOGE(TAG, "LCD handle is NULL in lcd_i2c_write_string");
         return ESP_ERR_INVALID_ARG;
@@ -296,15 +297,32 @@ esp_err_t lcd_i2c_write_string(lcd_i2c_handle_t* lcd, const char *str) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    esp_err_t ret = ESP_OK;
-    ESP_LOGD(TAG, "Printing string: \"%s\"", str);
+    char print_buffer[40];
 
-    int strIndex = 0; 
-    while (str[strIndex] != '\0') {
+    va_list args;
+    va_start(args, str);
+
+    int chars_written = vsnprintf(print_buffer, sizeof(print_buffer), str, args);
+
+    va_end(args);
+
+    if (chars_written < 0) {
+        ESP_LOGE(TAG, "Error formatting string for LCD: %d", chars_written);
+        return ESP_FAIL;
+    }
+
+    esp_err_t ret = ESP_OK;
+    ESP_LOGD(TAG, "Printing formatted string: \"%s\"", print_buffer);
+
+    int strIndex = 0;
+
+    while (print_buffer[strIndex] != '\0') {
         vTaskDelay(pdMS_TO_TICKS(50)); // ROLLING EFFECT
-        ret = lcd_i2c_write_char(lcd, str[strIndex]);
+        ret = lcd_i2c_write_char(lcd, print_buffer[strIndex]);
+
         if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to print character '%c' (0x%02x) at index %d", str[strIndex], str[strIndex], strIndex);
+            ESP_LOGE(TAG, "Failed to print character '%c' (0x%02x) from formatted string at index %d", 
+                     print_buffer[strIndex], print_buffer[strIndex], strIndex);
             return ret;
         }
         strIndex++;
