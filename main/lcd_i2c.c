@@ -18,7 +18,7 @@ i2c_master_bus_handle_t lcd_i2c_master_init(void) {
         .flags.enable_internal_pullup = true,
     };
 
-    i2c_master_bus_handle_t i2c_bus_handle = NULL;
+    i2c_master_bus_handle_t i2c_bus_handle;
     esp_err_t err = i2c_new_master_bus(&i2c_conf, &i2c_bus_handle);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to create new I2C master bus: %s", esp_err_to_name(err));

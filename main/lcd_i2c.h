@@ -44,11 +44,14 @@
 #define LCD_SETDDRAMADDR            0b10000000
 
 #define LCD_DISPLAYON               0b00000100
-#define LCD_CURSORON                0b00000000 // CURSOR ON = 0b00000010 
-#define LCD_BLINKON                 0b00000000 // BLINK ON =  0b00000001  
+#define LCD_CURSOROFF               0b00000000
+#define LCD_CURSORON                0b00000010
+#define LCD_BLINKOFF                0b00000000
+#define LCD_BLINKON            0b00000001  
 
 #define LCD_ENTRYSHIFTINCREMENT     0b00000010
-#define LCD_ENTRYSHIFTLEFT          0b00000000
+#define LCD_ENTRYSHIFTLEFTON        0b00000000 
+#define LCD_ENTRYSHIFTLEFTOFF       0b00000001
 
 
 #define LCD_8BITMODE                0b00010000
