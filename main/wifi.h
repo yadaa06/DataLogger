@@ -12,11 +12,7 @@
 #define WIFI_FAIL_BIT           BIT1
 #define MAX_RETRY               10
 
-esp_err_t wifi_driver_init(void);
-esp_err_t wifi_driver_configure_station(void);
-esp_err_t wifi_driver_connect_station(const char* ssid, const char* pswd);
-esp_err_t wifi_driver_event_handling(void);
-
+esp_err_t wifi_driver_start_and_connect(const char* ssid, const char* pswd);
 EventGroupHandle_t wifi_driver_get_event_group(void);
 
 #endif

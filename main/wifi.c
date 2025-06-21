@@ -13,9 +13,8 @@
 static int retry_num = 0;
 static const char* TAG = "WIFI_DRIVER";
 static EventGroupHandle_t wifi_event_group;
-static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
 
-esp_err_t wifi_driver_init(void) {
+static esp_err_t _wifi_driver_init(void) {
     ESP_LOGI(TAG, "Initializing Wifi driver");
 
     esp_err_t ret = nvs_flash_init();
@@ -42,7 +41,7 @@ esp_err_t wifi_driver_init(void) {
     return ESP_OK;
 }
 
-esp_err_t wifi_driver_configure_station(void) {
+static esp_err_t _wifi_driver_configure_station(void) {
     esp_err_t ret;
     retry_num = 0;
 
@@ -81,7 +80,7 @@ esp_err_t wifi_driver_configure_station(void) {
     return ESP_OK;
 }
 
-esp_err_t wifi_driver_connect_station(const char* ssid, const char* pswd) {
+static esp_err_t _wifi_driver_connect_station(const char* ssid, const char* pswd) {
     esp_err_t ret;
 
     ESP_LOGI(TAG, "Connecting to Wifi Network (%s)", ssid);
@@ -122,41 +121,6 @@ esp_err_t wifi_driver_connect_station(const char* ssid, const char* pswd) {
  
     return ESP_OK;
 }
-
-esp_err_t wifi_driver_event_handling() {
-    esp_err_t ret;
-
-    ESP_LOGI(TAG, "Starting Wifi Event Handling");
-
-    wifi_event_group = xEventGroupCreate();
-
-    if (wifi_event_group == NULL) {
-        ESP_LOGE(TAG, "Failed to create WiFi Group");
-        return ESP_FAIL;
-    }
-    ESP_LOGI(TAG, "WiFi event group created");
-
-    ret = esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to register WIFI_EVENT handler (%s)", esp_err_to_name(ret));
-        vEventGroupDelete(wifi_event_group);
-        return ret;
-    }
-    ESP_LOGI(TAG, "Registered handler for all WIFI_EVENTs.");
-
-    ret = esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, NULL);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to register IP_EVENT_STA_GOT_IP handler (%s)", esp_err_to_name(ret));
-        esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler);
-        vEventGroupDelete(wifi_event_group);
-        return ret;
-    }
-    ESP_LOGI(TAG, "Registered handler for IP_EVENT_STA_GOT_IP.");
-
-    ESP_LOGI(TAG, "WiFi event handling setup complete.");
-    return ESP_OK;
-}
-
 
 static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
 
@@ -203,8 +167,73 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t e
                 break;
         }
     }
-
 }
+
+static esp_err_t _wifi_driver_event_handling() {
+    esp_err_t ret;
+
+    ESP_LOGI(TAG, "Starting Wifi Event Handling");
+
+    wifi_event_group = xEventGroupCreate();
+
+    if (wifi_event_group == NULL) {
+        ESP_LOGE(TAG, "Failed to create WiFi Group");
+        return ESP_FAIL;
+    }
+    ESP_LOGI(TAG, "WiFi event group created");
+
+    ret = esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to register WIFI_EVENT handler (%s)", esp_err_to_name(ret));
+        vEventGroupDelete(wifi_event_group);
+        return ret;
+    }
+    ESP_LOGI(TAG, "Registered handler for all WIFI_EVENTs.");
+
+    ret = esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, NULL);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to register IP_EVENT_STA_GOT_IP handler (%s)", esp_err_to_name(ret));
+        esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler);
+        vEventGroupDelete(wifi_event_group);
+        return ret;
+    }
+    ESP_LOGI(TAG, "Registered handler for IP_EVENT_STA_GOT_IP.");
+
+    ESP_LOGI(TAG, "WiFi event handling setup complete.");
+    return ESP_OK;
+}
+
+esp_err_t wifi_driver_start_and_connect(const char* ssid, const char* pswd) {
+    esp_err_t ret;
+
+    ret = _wifi_driver_init();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "WiFi driver initialization failed! (%s)", esp_err_to_name(ret));
+        return ret;
+    }
+
+    ret = _wifi_driver_configure_station();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "WiFi station configuration failed! (%s)", esp_err_to_name(ret));
+        return ret;
+    }
+
+    ret = _wifi_driver_event_handling();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "WiFi event handling setup failed! (%s)", esp_err_to_name(ret));
+        return ret;
+    }
+
+    ret = _wifi_driver_connect_station(ssid, pswd);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "WiFi connection attempt failed! (%s)", esp_err_to_name(ret));
+        return ret;
+    }
+
+    ESP_LOGI(TAG, "WiFi setup and connection process initiated successfully.");
+    return ESP_OK;
+}
+
 
 EventGroupHandle_t wifi_driver_get_event_group() {
     return wifi_event_group;

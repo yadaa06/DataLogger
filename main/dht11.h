@@ -8,7 +8,6 @@
 
 // DHT11 Pin Definition
 #define DHT11_PIN                   GPIO_NUM_4
-#define DHT11_POWER_ON_DELAY_MS     1000 
 
 // Function Prototypes
 /**

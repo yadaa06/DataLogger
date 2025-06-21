@@ -60,7 +60,7 @@ esp_err_t read_dht_data(float *temperature, float *humidity){
             }
             start_time = esp_timer_get_time();
             while(gpio_get_level(DHT11_PIN) == 1) {
-                if (esp_timer_get_time() - start_time > 90) {
+                if (esp_timer_get_time() - start_time > 120) {
                     ESP_LOGE(TAG, "DHT FAILED TO PULL SIGNAL BACK DOWN (DURING DATA)");
                     return ESP_FAIL;
                 }

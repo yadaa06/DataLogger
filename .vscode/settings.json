@@ -17,6 +17,8 @@
     "esp_timer.h": "c",
     "cstdint": "c",
     "sstream": "c",
-    "regex": "c"
+    "regex": "c",
+    "dht11.h": "c",
+    "compare": "c"
   }
 }
