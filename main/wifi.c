@@ -44,6 +44,7 @@ esp_err_t wifi_driver_init(void) {
 
 esp_err_t wifi_driver_configure_station(void) {
     esp_err_t ret;
+    retry_num = 0;
 
     ESP_LOGI(TAG, "Configuring Wifi in Station Mode");
 
@@ -59,22 +60,24 @@ esp_err_t wifi_driver_configure_station(void) {
         ESP_LOGE(TAG, "Failed to create default WiFi station netif");
         return ESP_FAIL;
     }
+    ESP_LOGI(TAG, "Created default Wifi station netif");
 
     wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
 
     ret = esp_wifi_init(&config);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Wifi intiialization failed (%s)", esp_err_to_name(ret));
+        ESP_LOGE(TAG, "Wifi intialization failed (%s)", esp_err_to_name(ret));
         return ret;
     }
+    ESP_LOGI(TAG, "Wifi initialization successful");
 
     ret = esp_wifi_set_mode(WIFI_MODE_STA);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Station mode intiialization failed (%s)", esp_err_to_name(ret));
+        ESP_LOGE(TAG, "Station mode intialization failed (%s)", esp_err_to_name(ret));
         return ret;
     }
-
     ESP_LOGI(TAG, "Wifi Configured for Station Mode");
+
     return ESP_OK;
 }
 
@@ -85,7 +88,7 @@ esp_err_t wifi_driver_connect_station(const char* ssid, const char* pswd) {
 
     wifi_config_t config = {
         .sta = {
-            .threshold.authmode = WIFI_AUTH_WPA2_PSK,
+            .threshold.authmode = WIFI_AUTH_WPA2_PSK
         }
     };
 
@@ -109,6 +112,13 @@ esp_err_t wifi_driver_connect_station(const char* ssid, const char* pswd) {
         return ret;
     }
     ESP_LOGI(TAG, "Successfully started wifi");
+
+    ret = esp_wifi_connect();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to connect to wifi (%s)", esp_err_to_name(ret));
+        return ret;
+    }
+    ESP_LOGI(TAG, "Successfully connected to wifi");
  
     return ESP_OK;
 }
@@ -121,10 +131,10 @@ esp_err_t wifi_driver_event_handling() {
     wifi_event_group = xEventGroupCreate();
 
     if (wifi_event_group == NULL) {
-        ESP_LOGE(TAG, "Failed to create WIFI Group");
+        ESP_LOGE(TAG, "Failed to create WiFi Group");
         return ESP_FAIL;
     }
-    ESP_LOGI(TAG, "Wifi event group created");
+    ESP_LOGI(TAG, "WiFi event group created");
 
     ret = esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL);
     if (ret != ESP_OK) {
@@ -149,6 +159,7 @@ esp_err_t wifi_driver_event_handling() {
 
 
 static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
+
     if (event_base == WIFI_EVENT) {
         switch (event_id) {
             case WIFI_EVENT_STA_START:
@@ -163,7 +174,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t e
                 xEventGroupClearBits(wifi_event_group, WIFI_CONNECTED_BIT);
                 xEventGroupSetBits(wifi_event_group, WIFI_FAIL_BIT);
                 if (retry_num < MAX_RETRY) {
-                    ESP_LOGI(TAG, "Retrying to connect to the AP...");
+                    ESP_LOGI(TAG, "Retrying to connect to the AP... (%d/%d)", retry_num, MAX_RETRY);
                     retry_num++;
                     esp_wifi_connect();
                 }
