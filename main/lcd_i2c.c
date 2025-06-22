@@ -9,14 +9,14 @@
 
 static const char *TAG = "LCD_I2C_DRIVER";
 
-i2c_master_bus_handle_t lcd_i2c_master_init(void) {
+static i2c_master_bus_handle_t _lcd_i2c_master_init(void) {
     i2c_master_bus_config_t i2c_conf = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .i2c_port = I2C_MASTER_NUM,
         .scl_io_num = I2C_MASTER_SCL_IO,
         .sda_io_num = I2C_MASTER_SDA_IO,
         .glitch_ignore_cnt = 7,
-        .flags.enable_internal_pullup = true,
+        .flags.enable_internal_pullup = false,
     };
 
     i2c_master_bus_handle_t i2c_bus_handle;
@@ -45,7 +45,7 @@ static esp_err_t _lcd_send_byte_i2c(lcd_i2c_handle_t *lcd, uint8_t val) {
     return ret;
 }
 
-lcd_i2c_handle_t* lcd_i2c_create(i2c_master_bus_handle_t i2c_bus_handle, uint8_t address, uint8_t cols, uint8_t rows) {
+static lcd_i2c_handle_t* _lcd_i2c_create(i2c_master_bus_handle_t i2c_bus_handle, uint8_t address, uint8_t cols, uint8_t rows) {
     if (i2c_bus_handle == NULL) {
         ESP_LOGE(TAG, "I2C BUS HANDLE IS NULL, CANNOT CREATE LCD");
         return NULL;
@@ -172,7 +172,7 @@ static esp_err_t _lcd_send_data(lcd_i2c_handle_t* lcd, uint8_t data) {
     return ESP_OK;
 }
 
-void lcd_i2c_init(lcd_i2c_handle_t* lcd) {
+static void _lcd_init(lcd_i2c_handle_t* lcd) {
     ESP_LOGI(TAG, "INITIALIZING LCD DISPLAY SEQUENCE");
     vTaskDelay(pdMS_TO_TICKS(50));
 
@@ -190,7 +190,7 @@ void lcd_i2c_init(lcd_i2c_handle_t* lcd) {
     esp_rom_delay_us(100);
 
     _lcd_send_cmd(lcd, LCD_FUNCTIONSET | LCD_4BITMODE | LCD_2LINE | LCD_5x8DOTS);
-    _lcd_send_cmd(lcd, LCD_DISPLAYMODECONTROL | LCD_DISPLAYON | LCD_CURSORON | LCD_BLINKON);
+    _lcd_send_cmd(lcd, LCD_DISPLAYMODECONTROL | LCD_DISPLAYON | LCD_CURSOROFF | LCD_BLINKOFF);
     _lcd_send_cmd(lcd, LCD_CLEARDISPLAY);
 
     _lcd_send_cmd(lcd, LCD_ENTRYMODESET | LCD_ENTRYSHIFTINCREMENT);
@@ -317,7 +317,6 @@ esp_err_t lcd_i2c_write_string(lcd_i2c_handle_t* lcd, const char *str, ...) {
     int strIndex = 0;
 
     while (print_buffer[strIndex] != '\0') {
-        vTaskDelay(pdMS_TO_TICKS(50)); // ROLLING EFFECT
         ret = lcd_i2c_write_char(lcd, print_buffer[strIndex]);
 
         if (ret != ESP_OK) {
@@ -329,4 +328,24 @@ esp_err_t lcd_i2c_write_string(lcd_i2c_handle_t* lcd, const char *str, ...) {
     }
 
     return ESP_OK;
+}
+
+lcd_i2c_handle_t* lcd_i2c_init(void) {
+    ESP_LOGI(TAG, "Initializing LCD");
+    i2c_master_bus_handle_t i2c_bus = _lcd_i2c_master_init();
+    if (i2c_bus == NULL) {
+        ESP_LOGE(TAG, "FAILED TO INITIALIZE I2C BUS");
+        return NULL;
+    }
+    ESP_LOGI(TAG, "INITIALIZED I2C BUS");
+
+    lcd_i2c_handle_t *lcd_handle = _lcd_i2c_create(i2c_bus, LCD_I2C_ADDR, LCD_COLS, LCD_ROWS);
+    if (lcd_handle == NULL) {
+        ESP_LOGE(TAG, "Failed to create LCD handle!");
+        return NULL;
+    }
+    ESP_LOGI(TAG, "LCD handle created");
+    _lcd_init(lcd_handle);
+
+    return lcd_handle;
 }

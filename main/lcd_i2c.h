@@ -47,7 +47,7 @@
 #define LCD_CURSOROFF               0b00000000
 #define LCD_CURSORON                0b00000010
 #define LCD_BLINKOFF                0b00000000
-#define LCD_BLINKON            0b00000001  
+#define LCD_BLINKON                 0b00000001  
 
 #define LCD_ENTRYSHIFTINCREMENT     0b00000010
 #define LCD_ENTRYSHIFTLEFTON        0b00000000 
@@ -68,12 +68,9 @@ typedef struct {
     uint8_t     backlight_state;
 } lcd_i2c_handle_t;
 
-i2c_master_bus_handle_t lcd_i2c_master_init(void);
-lcd_i2c_handle_t* lcd_i2c_create(i2c_master_bus_handle_t i2c_bus_handle, uint8_t address, uint8_t cols, uint8_t rows);
+lcd_i2c_handle_t* lcd_i2c_init(void);
 
-void lcd_i2c_init(lcd_i2c_handle_t* lcd);
 void lcd_i2c_backlight(lcd_i2c_handle_t* lcd, bool on);
-
 esp_err_t lcd_i2c_home(lcd_i2c_handle_t* lcd);
 esp_err_t lcd_i2c_clear(lcd_i2c_handle_t* lcd);
 esp_err_t lcd_i2c_set_cursor(lcd_i2c_handle_t* lcd, uint8_t col, uint8_t row);
