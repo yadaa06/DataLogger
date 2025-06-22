@@ -19,6 +19,7 @@
     "sstream": "c",
     "regex": "c",
     "dht11.h": "c",
-    "compare": "c"
+    "compare": "c",
+    "esp_http_server.h": "c"
   }
 }
