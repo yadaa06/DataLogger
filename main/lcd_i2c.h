@@ -6,7 +6,6 @@
 #include "esp_err.h"
 #include "driver/i2c_master.h"
 
-
 #define I2C_MASTER_SDA_IO           GPIO_NUM_21
 #define I2C_MASTER_SCL_IO           GPIO_NUM_22
 
@@ -24,12 +23,10 @@
 #define PCF8574_EN                  0b00000100
 #define PCF8574_BL                  0b00001000
 
-
 #define PCF8574_D4                  0b00010000
 #define PCF8574_D5                  0b00100000
 #define PCF8574_D6                  0b01000000
 #define PCF8574_D7                  0b10000000
-
 
 #define LCD_RS_COMMAND              0b00000000
 #define LCD_RS_DATA                 0b00000001
@@ -52,7 +49,6 @@
 #define LCD_ENTRYSHIFTINCREMENT     0b00000010
 #define LCD_ENTRYSHIFTLEFTON        0b00000000 
 #define LCD_ENTRYSHIFTLEFTOFF       0b00000001
-
 
 #define LCD_8BITMODE                0b00010000
 #define LCD_4BITMODE                0b00000000

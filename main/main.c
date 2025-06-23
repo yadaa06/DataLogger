@@ -5,14 +5,13 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
-#include "esp_https_server.h"
+#include "esp_http_server.h"
 #include "sdkconfig.h"
 
 #include "dht11_task.h"
 #include "lcd_i2c.h"
 #include "wifi.h"
 #include "webserver.h"
-
 
 static const char* APP_TAG = "MAIN_APP"; 
 
@@ -56,13 +55,14 @@ void app_main(void) {
         }
         ESP_LOGI(APP_TAG, "Server start successful");
        
-        BaseType_t xReturned = xTaskCreate(
+        BaseType_t xReturned = xTaskCreatePinnedToCore(
             dht11_read_task, 
             "DHT11 Reader", 
             4096, 
             NULL, 
             15, 
-            NULL
+            NULL,
+            1
         );
         if (xReturned != pdPASS) {
             ESP_LOGE(APP_TAG, "Failed to create DHT11 reading task!");

@@ -1,5 +1,6 @@
 // dht11_task.c
 
+#include <stdbool.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
@@ -28,24 +29,23 @@ void dht11_read_task(void *pvParameters) {
     float init_temp = 0.0f;
     float init_hum = 0.0f;
 
-    esp_log_level_set("DHT11_DRIVER", ESP_LOG_WARN);
-    read_dht_data(&init_temp, &init_hum);
-    esp_log_level_set("DHT11_DRIVER", ESP_LOG_ERROR);
+    read_dht_data(&init_temp, &init_hum, true);
+
 
     vTaskDelay(pdMS_TO_TICKS(5000));
 
     while(1) {
-        float temp = 0.0f;
-        float hum = 0.0f;
+        float temp_c = 0.0f;
+        float hum_c = 0.0f;
 
-        esp_err_t ret = read_dht_data(&temp, &hum);
+        esp_err_t ret = read_dht_data(&temp_c, &hum_c, false);
         if (ret != ESP_OK) {
             ESP_LOGE(DHT_TASK_TAG, "FAILED TO READ DHT11 DATA: %s", esp_err_to_name(ret));
         }
         else {
-            g_temperature = temp;
-            g_humidity = hum;
-            ESP_LOGI(DHT_TASK_TAG, "Temperature: %.1f C, Humidity: %.1f %%", g_temperature, g_humidity);
+            g_temperature = temp_c * (9.0 / 5.0) + 32;
+            g_humidity = hum_c;
+            ESP_LOGI(DHT_TASK_TAG, "Temperature: %.1f F, Humidity: %.1f %%", g_temperature, g_humidity);
         }
 
         vTaskDelay(pdMS_TO_TICKS(5000));

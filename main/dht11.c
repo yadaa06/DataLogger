@@ -1,18 +1,23 @@
 // dht11.c
 
+#include <stdbool.h>
 #include "dht11.h"     
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "esp_timer.h"
+#include "portmacro.h"
 #include "rom/ets_sys.h" // For esp_rom_delay_us 
 
 // Internal defines and static variables for this module
 static const char* TAG = "DHT11_DRIVER"; 
+static portMUX_TYPE dht11_gpio_mux = portMUX_INITIALIZER_UNLOCKED;
 
-esp_err_t read_dht_data(float *temperature, float *humidity){
+esp_err_t read_dht_data(float *temperature, float *humidity, bool suppressLogErrors){
     uint8_t data[5] = {0, 0, 0, 0, 0};
+    esp_err_t ret = ESP_OK;
 
+    portENTER_CRITICAL(&dht11_gpio_mux);
     // 1. Send start signal
     gpio_set_direction(DHT11_PIN, GPIO_MODE_OUTPUT);
     gpio_set_level(DHT11_PIN, 0);
@@ -27,24 +32,24 @@ esp_err_t read_dht_data(float *temperature, float *humidity){
 
     while(gpio_get_level(DHT11_PIN) == 1) {
         if (esp_timer_get_time() - start_time > 100) {
-            ESP_LOGE(TAG, "DHT FAILED TO PULL SIGNAL DOWN (DURING SETUP)");
-            return ESP_FAIL;
+            ret = ESP_FAIL;
+            goto exit_critical;
         }
     }
 
     start_time = esp_timer_get_time();
     while(gpio_get_level(DHT11_PIN) == 0) {
         if (esp_timer_get_time() - start_time > 100) {
-            ESP_LOGE(TAG, "DHT FAILED TO PULL SIGNAL BACK UP (DURING SETUP)");
-            return ESP_FAIL;
+            ret = ESP_FAIL;
+            goto exit_critical;
         }
     }
 
     start_time = esp_timer_get_time();
     while(gpio_get_level(DHT11_PIN) == 1) {
         if (esp_timer_get_time() - start_time > 100) {
-            ESP_LOGE(TAG, "DHT FAILED TO PULL SIGNAL BACK DOWN (BEGININING OF DATA)");
-            return ESP_FAIL;
+            ret = ESP_FAIL;
+            goto exit_critical;
         }
     }
 
@@ -54,15 +59,15 @@ esp_err_t read_dht_data(float *temperature, float *humidity){
             start_time = esp_timer_get_time();
             while(gpio_get_level(DHT11_PIN) == 0) {
                 if (esp_timer_get_time() - start_time > 70) {
-                    ESP_LOGE(TAG, "DHT FAILED TO PULL SIGNAL BACK UP (DURING DATA)");
-                    return ESP_FAIL;
+                    ret = ESP_FAIL;
+                    goto exit_critical;
                 }
             }
             start_time = esp_timer_get_time();
             while(gpio_get_level(DHT11_PIN) == 1) {
                 if (esp_timer_get_time() - start_time > 120) {
-                    ESP_LOGE(TAG, "DHT FAILED TO PULL SIGNAL BACK DOWN (DURING DATA)");
-                    return ESP_FAIL;
+                    ret = ESP_FAIL;
+                    goto exit_critical;
                 }
             }
 
@@ -75,14 +80,26 @@ esp_err_t read_dht_data(float *temperature, float *humidity){
     }
 
     // 4. Checksum
-    if (data[4] == ((data[0] + data[1] + data[2] + data[3]) & 0xFF)) {
-        ESP_LOGI(TAG, "THIS ROUND OF DATA IS VALID");
+    if (data[4] != ((data[0] + data[1] + data[2] + data[3]) & 0xFF)) {
+        ret = ESP_ERR_INVALID_CRC;
+    } else {
         *humidity = (float)data[0] + (float)data[1] / 10.0f;
         *temperature = (float)data[2] + (float)data[3] / 10.0f;
-        return ESP_OK;
+        ret = ESP_OK;
     }
-    else {
-        ESP_LOGE(TAG, "CHECKSUM FAILED");
-        return ESP_FAIL;
+
+exit_critical:
+    portEXIT_CRITICAL(&dht11_gpio_mux);
+    
+    if (ret != ESP_OK && !suppressLogErrors) {
+        if (ret == ESP_ERR_INVALID_CRC) {
+            ESP_LOGE(TAG, "CHECKSUM FAILED");
+        } else {
+            ESP_LOGE(TAG, "DHT timing error: %s", esp_err_to_name(ret));
+        }
+    } else {
+        ESP_LOGI(TAG, "This round of data is VALID");
     }
+
+    return ret;
 }

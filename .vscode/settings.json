@@ -20,6 +20,7 @@
     "regex": "c",
     "dht11.h": "c",
     "compare": "c",
-    "esp_http_server.h": "c"
+    "esp_http_server.h": "c",
+    "stdbool.h": "c"
   }
 }
