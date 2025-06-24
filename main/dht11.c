@@ -94,12 +94,15 @@ esp_err_t read_dht_data(float *temperature, float *humidity, bool suppressLogErr
     if (ret != ESP_OK && !suppressLogErrors) {
         if (ret == ESP_ERR_INVALID_CRC) {
             ESP_LOGE(TAG, "CHECKSUM FAILED");
+            return ESP_FAIL;
         } else {
             ESP_LOGE(TAG, "DHT timing error: %s", esp_err_to_name(ret));
+            return ESP_FAIL;
         }
     } else {
         ESP_LOGI(TAG, "This round of data is VALID");
+        return ESP_OK;
     }
 
-    return ret;
+    return ESP_OK;
 }

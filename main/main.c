@@ -79,7 +79,7 @@ void app_main(void) {
         BaseType_t xReturned = xTaskCreate(
             lcd_display_task,
             "LCD Displayer",
-            4096,
+            2048,
             NULL,
             LCD_TASK_PRIORITY,
             NULL
