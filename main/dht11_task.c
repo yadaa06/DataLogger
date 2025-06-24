@@ -25,27 +25,28 @@ void dht11_read_task(void *pvParameters) {
     (void)pvParameters;
 
     ESP_LOGI(DHT_TASK_TAG, "DHT11 reading task started");
-
-    float init_temp = 0.0f;
-    float init_hum = 0.0f;
-
-    read_dht_data(&init_temp, &init_hum, true);
-
-
-    vTaskDelay(pdMS_TO_TICKS(5000));
+    int suppress_fail_count = 3; 
 
     while(1) {
         float temp_c = 0.0f;
         float hum_c = 0.0f;
 
-        esp_err_t ret = read_dht_data(&temp_c, &hum_c, false);
+        bool suppress_driver_logs = (suppress_fail_count > 0);
+        esp_err_t ret = read_dht_data(&temp_c, &hum_c, suppress_driver_logs);
+
         if (ret != ESP_OK) {
-            ESP_LOGE(DHT_TASK_TAG, "FAILED TO READ DHT11 DATA: %s", esp_err_to_name(ret));
+            if (suppress_fail_count > 0) {
+                ESP_LOGW(DHT_TASK_TAG, "DHT11 read failed, retrying(%d suppressed attempts left)", suppress_fail_count);
+                suppress_fail_count--; 
+            } else {
+                ESP_LOGE(DHT_TASK_TAG, "FAILED TO READ DHT11 DATA: %s", esp_err_to_name(ret));
+            }
         }
         else {
             g_temperature = temp_c * (9.0 / 5.0) + 32;
             g_humidity = hum_c;
             ESP_LOGI(DHT_TASK_TAG, "Temperature: %.1f F, Humidity: %.1f %%", g_temperature, g_humidity);
+            suppress_fail_count = 3; 
         }
 
         vTaskDelay(pdMS_TO_TICKS(5000));
