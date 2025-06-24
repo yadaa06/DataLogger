@@ -9,9 +9,13 @@
 #include "sdkconfig.h"
 
 #include "dht11_task.h"
-#include "lcd_i2c.h"
+#include "lcd_task.h"
 #include "wifi.h"
 #include "webserver.h"
+
+
+#define DHT11_TASK_PRIORITY 15
+#define LCD_TASK_PRIORITY 10
 
 static const char* TAG = "APP_MAIN"; 
 
@@ -46,15 +50,6 @@ void app_main(void) {
         ESP_LOGI("APP_MAIN", "DHT11 data mutex created successfully.");
     }
         
-    lcd_i2c_handle_t* lcd_handle = lcd_i2c_init();
-    if (lcd_handle == NULL) {
-        ESP_LOGE(TAG, "LCD INITIALIZATION FAILED");
-        return;
-    }
-    ESP_LOGI(TAG, "LCD INITIALIZED");
-
-    lcd_i2c_write_string(lcd_handle, "Hello World!");
-
     if (bits & WIFI_CONNECTED_BIT) {
         ESP_LOGI(TAG, "WiFi connected successfully!\n");
         vTaskDelay(pdMS_TO_TICKS(5000)); 
@@ -65,21 +60,37 @@ void app_main(void) {
         }
         ESP_LOGI(TAG, "Server start successful");
        
-        BaseType_t xReturned = xTaskCreatePinnedToCore(
+        BaseType_t xReturnedPinned = xTaskCreatePinnedToCore(
             dht11_read_task, 
             "DHT11 Reader", 
             4096, 
             NULL, 
-            15, 
+            DHT11_TASK_PRIORITY, 
             NULL,
             1
         );
-        if (xReturned != pdPASS) {
+        if (xReturnedPinned != pdPASS) {
             ESP_LOGE(TAG, "Failed to create DHT11 reading task!");
             return;
         } else {
-        ESP_LOGI(TAG, "DHT11 reading task created with priority %d.", 15);
+            ESP_LOGI(TAG, "DHT11 reading task created with priority %d", DHT11_TASK_PRIORITY);
         }
+
+        BaseType_t xReturned = xTaskCreate(
+            lcd_display_task,
+            "LCD Displayer",
+            4096,
+            NULL,
+            LCD_TASK_PRIORITY,
+            NULL
+        );
+
+        if (xReturned != pdPASS) {
+            ESP_LOGE(TAG, "Failed to create LCD Display Task");
+        } else {
+            ESP_LOGI(TAG, "LCD display task created with priority %d", LCD_TASK_PRIORITY);
+        }
+
     } else if (bits & WIFI_FAIL_BIT) {
         ESP_LOGE(TAG, "WiFi connection failed after multiple retries. Cannot proceed.");
     } else {

@@ -70,7 +70,7 @@ void dht11_read_task(void *pvParameters) {
                 ESP_LOGE(TAG, "ERROR: dht11 read task failed to take mutex");
             }
 
-            ESP_LOGI(TAG, "Temperature: %.1f F, Humidity: %.1f %%", g_temperature, g_humidity);
+            ESP_LOGI(TAG, "Temperature: %.2f F, Humidity: %.1f %%", g_temperature, g_humidity);
             suppress_fail_count = 3; 
         }
 

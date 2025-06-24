@@ -316,7 +316,7 @@ esp_err_t lcd_i2c_write_string(lcd_i2c_handle_t* lcd, const char *str, ...) {
 
     int strIndex = 0;
 
-    while (print_buffer[strIndex] != '\0') {
+    while (print_buffer[strIndex] != '\0' && strIndex < lcd -> cols) {
         ret = lcd_i2c_write_char(lcd, print_buffer[strIndex]);
 
         if (ret != ESP_OK) {
