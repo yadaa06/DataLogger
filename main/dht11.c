@@ -21,7 +21,7 @@ esp_err_t read_dht_data(float *temperature, float *humidity, bool suppressLogErr
     // 1. Send start signal
     gpio_set_direction(DHT11_PIN, GPIO_MODE_OUTPUT);
     gpio_set_level(DHT11_PIN, 0);
-    esp_rom_delay_us(18000);
+    esp_rom_delay_us(20000);
     gpio_set_level(DHT11_PIN, 1);
     esp_rom_delay_us(40);
     gpio_set_direction(DHT11_PIN, GPIO_MODE_INPUT);
@@ -88,7 +88,7 @@ esp_err_t read_dht_data(float *temperature, float *humidity, bool suppressLogErr
         ret = ESP_OK;
     }
 
-exit_critical:
+    exit_critical:
     portEXIT_CRITICAL(&dht11_gpio_mux);
     
     if (ret != ESP_OK && !suppressLogErrors) {
