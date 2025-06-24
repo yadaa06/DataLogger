@@ -6,6 +6,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
+extern SemaphoreHandle_t xDHT11Mutex;
 
 float dht11_get_temperature(void);
 float dht11_get_humidity(void);

@@ -8,23 +8,41 @@
 #include "dht11_task.h"
 #include "dht11.h"
 
-static const char* DHT_TASK_TAG = "DHT11_TASK";
+static const char* TAG = "DHT11_TASK";
 
 static float g_temperature = 0.0f;
 static float g_humidity = 0.0f;
 
+SemaphoreHandle_t xDHT11Mutex;
+
 float dht11_get_temperature() {
-    return g_temperature;
+    float temp_read = 0.0f;
+
+    if (xSemaphoreTake(xDHT11Mutex, portMAX_DELAY) == pdTRUE) {
+        temp_read = g_temperature;
+        xSemaphoreGive(xDHT11Mutex);
+    } else {
+        ESP_LOGE(TAG, "ERROR: dht11_get_temperature failed to take mutex!");
+    }
+    return temp_read;
 } 
 
 float dht11_get_humidity(){
-    return g_humidity;
+    float hum_read = 0.0f;
+
+    if (xSemaphoreTake(xDHT11Mutex, portMAX_DELAY) == pdTRUE) {
+        hum_read = g_humidity;
+        xSemaphoreGive(xDHT11Mutex);
+    } else {
+       ESP_LOGE(TAG, "ERROR: dht11_get_humidity failed to take mutex!"); 
+    }
+    return hum_read;
 }
 
 void dht11_read_task(void *pvParameters) {
     (void)pvParameters;
 
-    ESP_LOGI(DHT_TASK_TAG, "DHT11 reading task started");
+    ESP_LOGI(TAG, "DHT11 reading task started");
     int suppress_fail_count = 3; 
 
     while(1) {
@@ -36,16 +54,23 @@ void dht11_read_task(void *pvParameters) {
 
         if (ret != ESP_OK) {
             if (suppress_fail_count > 0) {
-                ESP_LOGW(DHT_TASK_TAG, "DHT11 read failed, retrying(%d suppressed attempts left)", suppress_fail_count);
+                ESP_LOGW(TAG, "DHT11 read failed, retrying(%d suppressed attempts left)", suppress_fail_count);
                 suppress_fail_count--; 
             } else {
-                ESP_LOGE(DHT_TASK_TAG, "FAILED TO READ DHT11 DATA: %s", esp_err_to_name(ret));
+                ESP_LOGE(TAG, "FAILED TO READ DHT11 DATA: %s", esp_err_to_name(ret));
             }
         }
         else {
-            g_temperature = temp_c * (9.0 / 5.0) + 32;
-            g_humidity = hum_c;
-            ESP_LOGI(DHT_TASK_TAG, "Temperature: %.1f F, Humidity: %.1f %%", g_temperature, g_humidity);
+            if (xSemaphoreTake(xDHT11Mutex, portMAX_DELAY) == pdTRUE) {
+                g_temperature = temp_c * (9.0 / 5.0) + 32;
+                g_humidity = hum_c;
+
+                xSemaphoreGive(xDHT11Mutex);
+            } else {
+                ESP_LOGE(TAG, "ERROR: dht11 read task failed to take mutex");
+            }
+
+            ESP_LOGI(TAG, "Temperature: %.1f F, Humidity: %.1f %%", g_temperature, g_humidity);
             suppress_fail_count = 3; 
         }
 

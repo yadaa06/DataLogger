@@ -1,7 +1,9 @@
 // webserver.c
 
-
+#include <stdio.h>
 #include "webserver.h"
+#include "dht11_task.h"
+
 #include "esp_http_server.h"
 #include "esp_err.h"
 #include "esp_log.h"
@@ -10,7 +12,11 @@ static const char* TAG = "WEBSERVER_DRIVER";
 
 static esp_err_t _root_get_handler(httpd_req_t *req) {
     ESP_LOGI(TAG, "Serving /");
-    const char* resp_str = "Hello World, from ESP32";
+    float currentTemp = dht11_get_temperature();
+    float currentHum = dht11_get_humidity(); 
+
+    char resp_str[100];
+    snprintf(resp_str, sizeof(resp_str), "Temperature: %.1f F, Humidity: %.1f %%", currentTemp, currentHum);
     httpd_resp_send(req, resp_str, HTTPD_RESP_USE_STRLEN);
 
     return ESP_OK;
