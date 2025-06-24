@@ -122,7 +122,7 @@ static esp_err_t _wifi_driver_connect_station(const char* ssid, const char* pswd
     return ESP_OK;
 }
 
-static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
+static void _wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
 
     if (event_base == WIFI_EVENT) {
         switch (event_id) {
@@ -182,7 +182,7 @@ static esp_err_t _wifi_driver_event_handling() {
     }
     ESP_LOGI(TAG, "WiFi event group created");
 
-    ret = esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL);
+    ret = esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &_wifi_event_handler, NULL);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to register WIFI_EVENT handler (%s)", esp_err_to_name(ret));
         vEventGroupDelete(wifi_event_group);
@@ -190,10 +190,10 @@ static esp_err_t _wifi_driver_event_handling() {
     }
     ESP_LOGI(TAG, "Registered handler for all WIFI_EVENTs.");
 
-    ret = esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, NULL);
+    ret = esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &_wifi_event_handler, NULL);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to register IP_EVENT_STA_GOT_IP handler (%s)", esp_err_to_name(ret));
-        esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler);
+        esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &_wifi_event_handler);
         vEventGroupDelete(wifi_event_group);
         return ret;
     }

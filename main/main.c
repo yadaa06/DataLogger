@@ -37,10 +37,19 @@ void app_main(void) {
                                            pdFALSE,
                                            pdFALSE,
                                            portMAX_DELAY);
-
+    
+    // xDHT11Mutex = xSemaphoreCreateMutex();
+    // if (xDHT11Mutex == NULL) {
+    //     ESP_LOGE("APP_MAIN", "Failed to create DHT11 data mutex! System may be unstable.");
+    //     return;
+    // } else {
+    //     ESP_LOGI("APP_MAIN", "DHT11 data mutex created successfully.");
+    // }
+        
     lcd_i2c_handle_t* lcd_handle = lcd_i2c_init();
     if (lcd_handle == NULL) {
         ESP_LOGE(APP_TAG, "LCD INITIALIZATION FAILED");
+        return;
     }
     ESP_LOGI(APP_TAG, "LCD INITIALIZED");
 
@@ -52,6 +61,7 @@ void app_main(void) {
         httpd_handle_t server = start_webserver();
         if (server == NULL) {
             ESP_LOGE(APP_TAG, "Server start unsuccessful");
+            return;
         }
         ESP_LOGI(APP_TAG, "Server start successful");
        
@@ -66,6 +76,7 @@ void app_main(void) {
         );
         if (xReturned != pdPASS) {
             ESP_LOGE(APP_TAG, "Failed to create DHT11 reading task!");
+            return;
         } else {
         ESP_LOGI(APP_TAG, "DHT11 reading task created with priority %d.", 15);
         }
