@@ -43,22 +43,25 @@ void dht11_read_task(void *pvParameters) {
     (void)pvParameters;
 
     ESP_LOGI(TAG, "DHT11 reading task started");
-    int suppress_fail_count = 3; 
-
+    float temp_c = 0.0f;
+    float hum_c = 0.0f;
     while(1) {
-        float temp_c = 0.0f;
-        float hum_c = 0.0f;
+        esp_err_t ret;
 
-        bool suppress_driver_logs = (suppress_fail_count > 0);
-        esp_err_t ret = read_dht_data(&temp_c, &hum_c, suppress_driver_logs);
+        for (int attempts = 1; attempts <= MAXATTEMPTS; attempts++) {
+            bool suppress_driver_logs = (attempts < MAXATTEMPTS);
+            ret = read_dht_data(&temp_c, &hum_c, suppress_driver_logs);
+
+            if (ret != ESP_OK) {
+                ESP_LOGW(TAG, "DHT11 read attempt failed, retrying (%d/%d)", attempts, MAXATTEMPTS);
+                vTaskDelay(pdMS_TO_TICKS(3000));
+            } else {
+                break;
+            }
+        }
 
         if (ret != ESP_OK) {
-            if (suppress_fail_count > 0) {
-                ESP_LOGW(TAG, "DHT11 read failed, retrying(%d suppressed attempts left)", suppress_fail_count);
-                suppress_fail_count--; 
-            } else {
-                ESP_LOGE(TAG, "FAILED TO READ DHT11 DATA: %s", esp_err_to_name(ret));
-            }
+            ESP_LOGE(TAG, "CRITICAL ERROR, FAILED TO READ DHT11 DATA 3 TIMES");
         }
         else {
             if (xSemaphoreTake(xDHT11Mutex, portMAX_DELAY) == pdTRUE) {
@@ -71,7 +74,6 @@ void dht11_read_task(void *pvParameters) {
             }
 
             ESP_LOGI(TAG, "Temperature: %.2f F, Humidity: %.1f %%", g_temperature, g_humidity);
-            suppress_fail_count = 3; 
         }
 
         vTaskDelay(pdMS_TO_TICKS(5000));

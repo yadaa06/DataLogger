@@ -47,6 +47,19 @@ const char* HTML_PAGE_CONTENT = R"rawliteral(
             color: #757575;
             margin-top: 20px;
         }
+        button {
+            background-color: #797a7a;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, Sans-Serif;
+            font-weight: bold;
+            border-radius: 10px;
+            border: none;
+            transition: background-color 0.3s ease;
+            cursor: pointer;
+            color: #030303;
+        }
+        button:hover{
+            background-color: #7c7d94;
+        }
     </style>
 </head>
 <body>
@@ -56,6 +69,7 @@ const char* HTML_PAGE_CONTENT = R"rawliteral(
         <p>Humidity: <span id = "humidity">--.-</span> %</p>
         <p class = "last-updated">Last Updated: <span id = "lastupdated">N/A</span></p>
     </div>
+    <button id = "readNowButton">Get Current Reading Now</button>
 </body>
     <script>
         async function updateDHTdata() {
@@ -78,8 +92,16 @@ const char* HTML_PAGE_CONTENT = R"rawliteral(
             }
         }
         
+        const readNowBtn = document.getElementById('readNowButton');
+        if (readNowButton) {
+            readNowBtn.addEventListener('click', () => {
+                console.log("Read Now Button Clicked");
+                updateDHTdata();
+            });
+        }
+        
         document.addEventListener('DOMContentLoaded', updateDHTdata);
-        setInterval(updateDHTdata, 5000);
+        setInterval(updateDHTdata, 60000);
     </script>
 </html>
 )rawliteral";

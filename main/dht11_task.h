@@ -3,6 +3,8 @@
 #ifndef DHT11_TASK_H
 #define DHT11_TASK_H
 
+
+#define MAXATTEMPTS 3
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
