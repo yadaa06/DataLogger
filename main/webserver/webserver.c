@@ -29,7 +29,7 @@ const char* HTML_PAGE_CONTENT = R"rawliteral(
             line-height: 1.6;
         }
         .container {
-            background-color: #30302f;
+            background-color: #303030;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             padding: 30px;
@@ -48,11 +48,12 @@ const char* HTML_PAGE_CONTENT = R"rawliteral(
             margin-top: 20px;
         }
         button {
-            background-color: #797a7a;
+            background-color: #797979;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, Sans-Serif;
             font-weight: bold;
             border-radius: 10px;
             border: none;
+            border-color: #030303;
             transition: background-color 0.3s ease;
             cursor: pointer;
             color: #030303;
