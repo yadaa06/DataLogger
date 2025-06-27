@@ -47,6 +47,6 @@ void lcd_display_task(void *pvParameters) {
         if (ret != ESP_OK) {
             return;
         } 
-        vTaskDelay(pdMS_TO_TICKS(5000));
+        xTaskNotifyWait(0, 0, NULL, pdMS_TO_TICKS(60000));
     }
 }

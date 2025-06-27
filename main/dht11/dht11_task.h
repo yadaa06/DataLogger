@@ -12,6 +12,7 @@
 
 extern SemaphoreHandle_t xDHT11Mutex;
 extern TaskHandle_t dht11_task_handle;
+extern TaskHandle_t lcd_task_handle;
 
 void dht11_notify_read(void);
 float dht11_get_temperature(void);

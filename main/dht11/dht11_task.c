@@ -99,6 +99,13 @@ void dht11_read_task(void *pvParameters) {
                 ESP_LOGE(TAG, "ERROR: dht11 read task failed to take mutex");
             }
 
+            if (lcd_task_handle != NULL) {
+                xTaskNotifyGive(lcd_task_handle);
+                ESP_LOGI(TAG, "Notified LCD of new data");
+            } else {
+                ESP_LOGE(TAG, "LCD TASK HANDLE IS NULL, CAN'T NOTIFY");
+            }
+
             ESP_LOGI(TAG, "Temperature: %.2f F, Humidity: %.1f %%", g_temperature, g_humidity);
         }
         xTaskNotifyWait(0, 0, NULL, pdMS_TO_TICKS(60000));

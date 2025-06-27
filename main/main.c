@@ -20,6 +20,7 @@
 
 static const char* TAG = "APP_MAIN"; 
 TaskHandle_t dht11_task_handle = NULL;
+TaskHandle_t lcd_task_handle = NULL;
 SemaphoreHandle_t xDHT11Mutex = NULL;
 
 void app_main(void) {
@@ -88,7 +89,7 @@ void app_main(void) {
             2048,
             NULL,
             LCD_TASK_PRIORITY,
-            NULL
+            &lcd_task_handle 
         );
 
         if (xReturned != pdPASS) {
