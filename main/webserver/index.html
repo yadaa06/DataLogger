@@ -23,6 +23,26 @@
             max-width: 500px;
             margin: 50px auto;
         }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #555;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: none;
+            margin: 10px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .hidden {
+            display: none !important;
+        }
+        .visible {
+            display: block !important;
+        }
         p {
             font-size: 1.2em;
             margin: 10px 0;
@@ -55,12 +75,16 @@
         <h1> Current Readings</h1>
         <p>Temperature: <span id = "temperature">--.--</span> &deg;F</p>
         <p>Humidity: <span id = "humidity">--.-</span> %</p>
+        <div id = "loader" class = "loader"></div></div>
         <p class = "last-updated">Last Updated: <span id = "lastupdated">N/A</span></p>
     </div>
     <button id = "readNowButton">Get Current Reading Now</button>
 </body>
     <script>
         async function updateDHTdata() {
+            loader.classList.remove('hidden');
+            loader.classList.add('visible');
+            readNowBtn.disabled = true;
             try {
                 const response = await fetch('/dht_data');
                 const data = await response.json();
@@ -77,6 +101,10 @@
                 document.getElementById('temperature').textContent = "Error";
                 document.getElementById('humidity').textContent = "Error";
                 document.getElementById('lastupdated').textContent = "Error";
+            } finally {
+                loader.classList.remove('visible');
+                loader.classList.add('hidden');
+                readNowBtn.disabled = false;
             }
         }
         
