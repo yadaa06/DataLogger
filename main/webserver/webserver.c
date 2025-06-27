@@ -12,15 +12,9 @@
 static const char* TAG = "WEB_SERVER";
 extern const uint8_t _binary_index_html_start[] asm("_binary_index_html_start");
 extern const uint8_t _binary_index_html_end[]   asm("_binary_index_html_end");
-extern TaskHandle_t dht11_task_handle;
 
-static esp_err_t _dht_data_get_handler(httpd_req_t *req) {
-    if (dht11_task_handle != NULL) {
-        xTaskNotifyGive(dht11_task_handle);
-        ESP_LOGI(TAG, "Sent notification to DHT11 task to read NOW");
-    } else {
-        ESP_LOGE(TAG, "DHT11 TASK HANDLE IS NULL, CAN'T SEND NOTIF");
-    }
+static esp_err_t _dht_data_get_handler(httpd_req_t *req) { 
+    dht11_notify_read();
 
     vTaskDelay(pdMS_TO_TICKS(500));
 

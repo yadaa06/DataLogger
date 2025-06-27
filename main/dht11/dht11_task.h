@@ -5,7 +5,7 @@
 
 
 #define MAXATTEMPTS 3
-#define MIN_READ_INTERVAL_US 3 * 1000 * 1000
+#define MIN_READ_INTERVAL_US 3000000
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"

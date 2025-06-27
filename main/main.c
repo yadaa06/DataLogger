@@ -7,6 +7,7 @@
 #include "nvs_flash.h"
 #include "esp_http_server.h"
 #include "sdkconfig.h"
+#include "freertos/semphr.h"
 
 #include "dht11_task.h"
 #include "lcd_task.h"
@@ -19,6 +20,7 @@
 
 static const char* TAG = "APP_MAIN"; 
 TaskHandle_t dht11_task_handle = NULL;
+SemaphoreHandle_t xDHT11Mutex = NULL;
 
 void app_main(void) {
     ESP_LOGI(TAG, "Application Starting"); 

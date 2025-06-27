@@ -15,7 +15,15 @@ static float g_temperature = 0.0f;
 static float g_humidity = 0.0f;
 static uint64_t last_read_time = 0;
 
-SemaphoreHandle_t xDHT11Mutex;
+void dht11_notify_read() {
+    if (dht11_task_handle != NULL) {
+        xTaskNotifyGive(dht11_task_handle);
+        ESP_LOGI(TAG, "Sent notification to DHT11 task to read NOW");
+    } else {
+        ESP_LOGE(TAG, "DHT11 TASK HANDLE IS NULL, CAN'T SEND NOTIF");
+    }
+}
+
 
 float dht11_get_temperature() {
     float temp_read = 0.0f;
