@@ -18,6 +18,7 @@
 #define LCD_TASK_PRIORITY 10
 
 static const char* TAG = "APP_MAIN"; 
+TaskHandle_t dht11_task_handle = NULL;
 
 void app_main(void) {
     ESP_LOGI(TAG, "Application Starting"); 
@@ -53,6 +54,24 @@ void app_main(void) {
     if (bits & WIFI_CONNECTED_BIT) {
         ESP_LOGI(TAG, "WiFi connected successfully!\n");
         vTaskDelay(pdMS_TO_TICKS(5000)); 
+
+        BaseType_t xReturnedPinned = xTaskCreatePinnedToCore(
+            dht11_read_task, 
+            "DHT11 Reader", 
+            4096, 
+            NULL, 
+            DHT11_TASK_PRIORITY,
+            &dht11_task_handle,
+            1
+        );
+
+        if (xReturnedPinned != pdPASS) {
+            ESP_LOGE(TAG, "Failed to create DHT11 reading task!");
+            return;
+        } else {
+            ESP_LOGI(TAG, "DHT11 reading task created with priority %d. Handle %p", DHT11_TASK_PRIORITY, dht11_task_handle);
+        }
+
         httpd_handle_t server = start_webserver();
         if (server == NULL) {
             ESP_LOGE(TAG, "Server start unsuccessful");
@@ -60,21 +79,6 @@ void app_main(void) {
         }
         ESP_LOGI(TAG, "Server start successful");
        
-        BaseType_t xReturnedPinned = xTaskCreatePinnedToCore(
-            dht11_read_task, 
-            "DHT11 Reader", 
-            4096, 
-            NULL, 
-            DHT11_TASK_PRIORITY, 
-            NULL,
-            1
-        );
-        if (xReturnedPinned != pdPASS) {
-            ESP_LOGE(TAG, "Failed to create DHT11 reading task!");
-            return;
-        } else {
-            ESP_LOGI(TAG, "DHT11 reading task created with priority %d", DHT11_TASK_PRIORITY);
-        }
 
         BaseType_t xReturned = xTaskCreate(
             lcd_display_task,

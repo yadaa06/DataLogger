@@ -4,6 +4,7 @@
 #include "webserver.h"
 #include "dht11_task.h"
 
+#include <freertos/task.h>
 #include "esp_http_server.h"
 #include "esp_err.h"
 #include "esp_log.h"
@@ -11,8 +12,18 @@
 static const char* TAG = "WEB_SERVER";
 extern const uint8_t _binary_index_html_start[] asm("_binary_index_html_start");
 extern const uint8_t _binary_index_html_end[]   asm("_binary_index_html_end");
+extern TaskHandle_t dht11_task_handle;
 
 static esp_err_t _dht_data_get_handler(httpd_req_t *req) {
+    if (dht11_task_handle != NULL) {
+        xTaskNotifyGive(dht11_task_handle);
+        ESP_LOGI(TAG, "Sent notification to DHT11 task to read NOW");
+    } else {
+        ESP_LOGE(TAG, "DHT11 TASK HANDLE IS NULL, CAN'T SEND NOTIF");
+    }
+
+    vTaskDelay(pdMS_TO_TICKS(500));
+
     float temperature = dht11_get_temperature();
     float humidity = dht11_get_humidity();
 
@@ -30,7 +41,6 @@ static esp_err_t _dht_data_get_handler(httpd_req_t *req) {
     ESP_LOGI(TAG, "Sent DHT data: %s", json_response);
     return ESP_OK;
 }
-
 
 
 static esp_err_t _root_get_handler(httpd_req_t *req) {

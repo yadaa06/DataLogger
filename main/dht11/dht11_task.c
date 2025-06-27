@@ -4,6 +4,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 
 #include "dht11_task.h"
 #include "dht11.h"
@@ -12,6 +13,7 @@ static const char* TAG = "DHT11_TASK";
 
 static float g_temperature = 0.0f;
 static float g_humidity = 0.0f;
+static uint64_t last_read_time = 0;
 
 SemaphoreHandle_t xDHT11Mutex;
 
@@ -47,6 +49,22 @@ void dht11_read_task(void *pvParameters) {
     float hum_c = 0.0f;
     while(1) {
         esp_err_t ret;
+        uint64_t current_time_us = esp_timer_get_time();
+        uint64_t time_since_last_read = current_time_us - last_read_time;
+
+        if (time_since_last_read < MIN_READ_INTERVAL_US) {
+            ESP_LOGW(TAG, "DHT11 read requested too soon (%.2f ms since last read). Waiting.", (float)time_since_last_read / 1000.0f);
+
+            uint64_t remaining_wait = MIN_READ_INTERVAL_US - time_since_last_read;
+            TickType_t remaining_ticks = pdMS_TO_TICKS(remaining_wait / 1000);
+            if (remaining_ticks == 0 && remaining_wait == 0) {
+                remaining_ticks = 1;
+            }
+
+            xTaskNotifyWait(0, 0, NULL, remaining_ticks);
+
+            continue;
+        }
 
         for (int attempts = 1; attempts <= MAXATTEMPTS; attempts++) {
             bool suppress_driver_logs = (attempts < MAXATTEMPTS);
@@ -75,7 +93,6 @@ void dht11_read_task(void *pvParameters) {
 
             ESP_LOGI(TAG, "Temperature: %.2f F, Humidity: %.1f %%", g_temperature, g_humidity);
         }
-
-        vTaskDelay(pdMS_TO_TICKS(5000));
+        xTaskNotifyWait(0, 0, NULL, pdMS_TO_TICKS(60000));
     }
 }
