@@ -22,6 +22,7 @@
     "compare": "c",
     "esp_http_server.h": "c",
     "stdbool.h": "c",
-    "cstdlib": "c"
+    "cstdlib": "c",
+    "dht11_task.h": "c"
   }
 }

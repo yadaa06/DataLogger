@@ -1,6 +1,7 @@
 // dht11_task.c
 
 #include <stdbool.h>
+#include <time.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
@@ -14,6 +15,31 @@ static const char* TAG = "DHT11_TASK";
 static float g_temperature = 0.0f;
 static float g_humidity = 0.0f;
 static uint64_t last_read_time = 0;
+
+static dht11_reading_t dht_history[DHT_HISTORY_SIZE];
+static int history_idx = 0;
+static int num_history_readings = 0;
+
+
+void dht11_get_history(dht11_reading_t *history_buffer, uint32_t *web_num_readings) {
+    if (xSemaphoreTake(xDHT11Mutex, portMAX_DELAY) == pdTRUE) {
+        *web_num_readings = num_history_readings;
+
+        if (num_history_readings > 0) {
+            int start_idx = (history_idx - num_history_readings + DHT_HISTORY_SIZE) % DHT_HISTORY_SIZE;
+            
+            for (int i = 0; i < num_history_readings; i++) {
+                int current_buffer_idx = (start_idx + i) % DHT_HISTORY_SIZE;
+                history_buffer[i] = dht_history[current_buffer_idx];
+            }
+        }
+
+        xSemaphoreGive(xDHT11Mutex);
+    } else {
+        ESP_LOGE(TAG, "ERROR: dht11_get_history failed to take mutex!");
+        *web_num_readings = 0;
+    }
+}
 
 void dht11_notify_read() {
     if (dht11_task_handle != NULL) {
@@ -93,6 +119,18 @@ void dht11_read_task(void *pvParameters) {
             if (xSemaphoreTake(xDHT11Mutex, portMAX_DELAY) == pdTRUE) {
                 g_temperature = temp_c * (9.0 / 5.0) + 32;
                 g_humidity = hum_c;
+
+                dht_history[history_idx].temperature = g_temperature;
+                dht_history[history_idx].humidity = g_humidity;
+                dht_history[history_idx].timestamp = time(NULL);
+                history_idx++;
+
+                if (history_idx == DHT_HISTORY_SIZE) {
+                    history_idx = 0;
+                }
+                if (num_history_readings < DHT_HISTORY_SIZE) {
+                    num_history_readings++;
+                }
 
                 xSemaphoreGive(xDHT11Mutex);
             } else {

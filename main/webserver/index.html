@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <meta name = "viewport" content = "width=device-width, initial-scale = 1.0">
     <title> ESP32 DHT11 Monitor</title>
+
+    <script src = "https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
         body {
@@ -13,6 +15,7 @@
             text-align: center;
             margin: 20px;
             padding: 0;
+            padding-bottom: 320px; /* Space for the fixed chart */
             line-height: 1.6;
         }
         .container {
@@ -60,13 +63,31 @@
             font-weight: bold;
             border-radius: 10px;
             border: none;
-            border-color: #030303;
+            padding: 10px 20px;
             transition: background-color 0.3s ease;
             cursor: pointer;
             color: #030303;
         }
         button:hover{
             background-color: #7c7d94;
+        }
+        .chart-container {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            width: 400px;
+            height: 300px;
+            background-color: #303030;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        @media (max-width: 600px) {
+            .chart-container {
+                width: calc(100% - 20px);
+                left: 10px;
+                right: 10px;
+            }
         }
     </style>
 </head>
@@ -75,12 +96,72 @@
         <h1> Current Readings</h1>
         <p>Temperature: <span id = "temperature">--.--</span> &deg;F</p>
         <p>Humidity: <span id = "humidity">--.-</span> %</p>
-        <div id = "loader" class = "loader"></div></div>
+        <div id = "loader" class = "loader"></div>
         <p class = "last-updated">Last Updated: <span id = "lastupdated">N/A</span></p>
     </div>
     <button id = "readNowButton">Get Current Reading Now</button>
+    <div class = "chart-container">
+        <canvas id = "sensorChart"></canvas>
+    </div>
+    
 </body>
     <script>
+        let myChart;
+        const ctx = document.getElementById('sensorChart').getContext('2d');
+        const loader = document.getElementById('loader');
+        const readNowBtn = document.getElementById('readNowButton');
+
+        async function initializeChart() {
+            try {
+                const response = await fetch('/dht_history');
+                const data = await response.json();
+                
+                const labels = data.history.map(d => new Date(d.timestamp * 1000).toLocaleTimeString());
+                const tempData = data.history.map(d => d.temperature);
+                const humidityData = data.history.map(d => d.humidity);
+
+                myChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Temperature (°F)',
+                            data: tempData,
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            yAxisID: 'y'
+                        }, {
+                            label: 'Humidity (%)',
+                            data: humidityData,
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            yAxisID: 'y1'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { title: { display: true, text: 'Time' } },
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: { display: true, text: 'Temperature (°F)' }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: { display: true, text: 'Humidity (%)' },
+                                grid: { drawOnChartArea: false }
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error("Error initializing chart:", error);
+            }
+        }
+
         async function updateDHTdata() {
             loader.classList.remove('hidden');
             loader.classList.add('visible');
@@ -93,9 +174,24 @@
                 document.getElementById('humidity').textContent = data.humidity.toFixed(1);
                 
                 const now = new Date();
-                document.getElementById('lastupdated').textContent = now.toLocaleTimeString();
+                const newLabel = now.toLocaleTimeString(); 
+                document.getElementById('lastupdated').textContent = newLabel; 
                 
                 console.log("Data updated successfully:", data);
+
+                if (myChart) {
+                    myChart.data.labels.push(newLabel);
+                    myChart.data.datasets[0].data.push(data.temperature);
+                    myChart.data.datasets[1].data.push(data.humidity);
+                
+                    if (myChart.data.labels.length > 60) {
+                        myChart.data.labels.shift();
+                        myChart.data.datasets.forEach(dataset => dataset.data.shift());
+                    }
+                    
+                    myChart.update();
+                }
+
             } catch (error) {
                 console.error("Error fetching DHT data:", error);
                 document.getElementById('temperature').textContent = "Error";
@@ -108,15 +204,17 @@
             }
         }
         
-        const readNowBtn = document.getElementById('readNowButton');
-        if (readNowButton) {
+        if (readNowBtn) {
             readNowBtn.addEventListener('click', () => {
                 console.log("Read Now Button Clicked");
                 updateDHTdata();
             });
         }
         
-        document.addEventListener('DOMContentLoaded', updateDHTdata);
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeChart();
+            updateDHTdata();
+        });
         setInterval(updateDHTdata, 60000);
     </script>
 </html>
