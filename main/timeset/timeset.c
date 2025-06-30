@@ -16,9 +16,7 @@ void initialize_sntp() {
 
 void wait_for_time_sync() {
     time_t now = 0;
-    struct tm timeinfo = {
-        0
-    };
+    struct tm timeinfo = {0};
 
     int retry = 0;
 
