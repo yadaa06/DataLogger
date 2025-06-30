@@ -8,6 +8,7 @@
 #include "esp_http_server.h"
 #include "sdkconfig.h"
 #include "freertos/semphr.h"
+#include "esp_sntp.h"
 
 #include "dht11_task.h"
 #include "lcd_task.h"

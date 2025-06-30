@@ -81,6 +81,11 @@ void dht11_read_task(void *pvParameters) {
     ESP_LOGI(TAG, "DHT11 reading task started");
     float temp_c = 0.0f;
     float hum_c = 0.0f;
+    read_dht_data(&temp_c, &hum_c, true);
+
+    ESP_LOGI(TAG, "Dummy reading");
+    vTaskDelay(3000);
+
     while(1) {
         esp_err_t ret;
         uint64_t current_time_us = esp_timer_get_time();
