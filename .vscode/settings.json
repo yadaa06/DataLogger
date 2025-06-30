@@ -23,6 +23,7 @@
     "esp_http_server.h": "c",
     "stdbool.h": "c",
     "cstdlib": "c",
-    "dht11_task.h": "c"
+    "dht11_task.h": "c",
+    "task.h": "c"
   }
 }

@@ -8,8 +8,8 @@
 #include "esp_http_server.h"
 #include "sdkconfig.h"
 #include "freertos/semphr.h"
-#include "esp_sntp.h"
 
+#include "timeset.h"
 #include "dht11_task.h"
 #include "lcd_task.h"
 #include "wifi.h"
@@ -58,6 +58,10 @@ void app_main(void) {
     if (bits & WIFI_CONNECTED_BIT) {
         ESP_LOGI(TAG, "WiFi connected successfully!\n");
         vTaskDelay(pdMS_TO_TICKS(5000)); 
+
+        set_timezone();
+        initialize_sntp();
+        wait_for_time_sync();
 
         BaseType_t xReturnedPinned = xTaskCreatePinnedToCore(
             dht11_read_task, 
