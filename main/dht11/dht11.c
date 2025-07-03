@@ -1,11 +1,11 @@
 // dht11.c
 
-#include <stdbool.h>
 #include "dht11.h"     
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
+#include <stdbool.h>
 #include "esp_log.h"
 #include "esp_timer.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "portmacro.h"
 #include "rom/ets_sys.h"
 

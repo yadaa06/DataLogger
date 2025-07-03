@@ -5,7 +5,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "driver/gpio.h"
-
 #include "lcd_task.h"
 #include "dht11_task.h"
 

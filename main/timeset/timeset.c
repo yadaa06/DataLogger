@@ -1,9 +1,9 @@
 // timeset.c
 
-#include "esp_sntp.h"
 #include "timeset.h"
-#include "esp_log.h"
 #include <time.h>
+#include "esp_log.h"
+#include "esp_sntp.h"
 
 static const char* TAG = "TIMESET_DRIVER";
 

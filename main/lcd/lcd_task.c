@@ -1,10 +1,10 @@
 // lcd_task.c
 
 #include "lcd_task.h"
-#include "lcd_i2c.h"
-#include "dht11_task.h"
 #include "esp_log.h"
 #include "esp_timer.h"
+#include "dht11_task.h"
+#include "lcd_i2c.h"
 
 static const char* TAG = "LCD_TASK";
 static lcd_mode_t current_mode = LCD_MODE_TEMP;

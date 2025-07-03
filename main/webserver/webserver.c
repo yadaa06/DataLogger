@@ -1,14 +1,13 @@
 // webserver.c
 
+#include "webserver.h"
 #include <stdio.h>
 #include <string.h>
-#include "webserver.h"
-#include "dht11_task.h"
-
-#include <freertos/task.h>
-#include "esp_http_server.h"
-#include "esp_err.h"
 #include "esp_log.h"
+#include "esp_err.h"
+#include "esp_http_server.h"
+#include <freertos/task.h>
+#include "dht11_task.h"
 
 static const char* TAG = "WEB_SERVER";
 extern const uint8_t _binary_index_html_start[] asm("_binary_index_html_start");

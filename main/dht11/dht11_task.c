@@ -2,13 +2,12 @@
 
 #include <stdbool.h>
 #include <time.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "esp_log.h"
-#include "esp_timer.h"
-
 #include "dht11_task.h"
 #include "dht11.h"
+#include "esp_log.h"
+#include "esp_timer.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 static const char* TAG = "DHT11_TASK";
 SemaphoreHandle_t xDHT11Mutex = NULL;
