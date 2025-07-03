@@ -42,11 +42,7 @@ void app_main(void) {
     }
     ESP_LOGI(TAG, "Waiting for WiFi connection...");
 
-    EventBits_t bits = xEventGroupWaitBits(wifi_event_group,
-                                           WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
-                                           pdFALSE,
-                                           pdFALSE,
-                                           portMAX_DELAY);
+    EventBits_t bits = xEventGroupWaitBits(wifi_event_group, WIFI_CONNECTED_BIT | WIFI_FAIL_BIT, pdFALSE, pdFALSE, portMAX_DELAY);
     
     xDHT11Mutex = xSemaphoreCreateMutex();
     if (xDHT11Mutex == NULL) {
@@ -59,20 +55,9 @@ void app_main(void) {
     if (bits & WIFI_CONNECTED_BIT) {
         ESP_LOGI(TAG, "WiFi connected successfully!\n");
         vTaskDelay(pdMS_TO_TICKS(5000)); 
+        setup_time();
 
-        set_timezone();
-        initialize_sntp();
-        wait_for_time_sync();
-
-        BaseType_t xReturnedPinned = xTaskCreatePinnedToCore(
-            dht11_read_task, 
-            "DHT11 Reader", 
-            4096, 
-            NULL, 
-            DHT11_TASK_PRIORITY,
-            &dht11_task_handle,
-            1
-        );
+        BaseType_t xReturnedPinned = xTaskCreatePinnedToCore(dht11_read_task, "DHT11 Reader", 4096, NULL, DHT11_TASK_PRIORITY, &dht11_task_handle, 1);
 
         if (xReturnedPinned != pdPASS) {
             ESP_LOGE(TAG, "Failed to create DHT11 reading task!");
@@ -89,14 +74,7 @@ void app_main(void) {
         ESP_LOGI(TAG, "Server start successful");
        
 
-        BaseType_t xReturnedLCD = xTaskCreate(
-            lcd_display_task,
-            "LCD Displayer",
-            4096,
-            NULL,
-            LCD_TASK_PRIORITY,
-            &lcd_task_handle 
-        );
+        BaseType_t xReturnedLCD = xTaskCreate(lcd_display_task, "LCD Displayer", 4096, NULL, LCD_TASK_PRIORITY, &lcd_task_handle);
 
         if (xReturnedLCD != pdPASS) {
             ESP_LOGE(TAG, "Failed to create LCD Display Task");
@@ -104,15 +82,7 @@ void app_main(void) {
             ESP_LOGI(TAG, "LCD display task created with priority %d", LCD_TASK_PRIORITY);
         }
 
-        button_task_init();
-        BaseType_t xReturnedButton = xTaskCreate(
-            button_press_task,
-            "Button Task",
-            2048,
-            NULL,
-            BUTTON_TASK_PRIORITY,
-            &button_task_handle
-        );
+        BaseType_t xReturnedButton = xTaskCreate(button_press_task, "Button Task", 2048, NULL, BUTTON_TASK_PRIORITY, &button_task_handle);
 
         if (xReturnedButton != pdPASS) {
             ESP_LOGE(TAG, "Failed to create Button task");

@@ -7,14 +7,14 @@
 
 static const char* TAG = "TIMESET_DRIVER";
 
-void initialize_sntp() {
+static void _initialize_sntp() {
     ESP_LOGI(TAG, "Initializing SNTP");
     esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);
     esp_sntp_setservername(0, "pool.ntp.org");
     esp_sntp_init();
 }
 
-void wait_for_time_sync() {
+static void _wait_for_time_sync() {
     time_t now = 0;
     struct tm timeinfo = {0};
 
@@ -29,8 +29,14 @@ void wait_for_time_sync() {
     localtime_r(&now, &timeinfo);
 }
 
-void set_timezone() {
+static void _set_timezone() {
     setenv("TZ", "EST5EDT,M3.2.0,M11.1.0", 1);
     tzset();
     ESP_LOGI(TAG, "Timezone set to EST");
+}
+
+void setup_time() {
+    _set_timezone();
+    _initialize_sntp();
+    _wait_for_time_sync();
 }

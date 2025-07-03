@@ -45,6 +45,8 @@ void button_task_init() {
 void button_press_task(void* pvParameters) {
     (void)pvParameters;
 
+    button_task_init();
+
     while (1) {
         if (xSemaphoreTake(xSignaler, portMAX_DELAY) == pdTRUE) {
             ESP_LOGI(TAG, "BUTTON PRESSED");
