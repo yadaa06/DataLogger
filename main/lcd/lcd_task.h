@@ -3,6 +3,8 @@
 #ifndef LCD_TASK_H
 #define LCD_TASK_H
 
+#define BUTTON_UL_VALUE 14
+
 typedef enum {
     LCD_MODE_TEMP,
     LCD_MODE_HUM,

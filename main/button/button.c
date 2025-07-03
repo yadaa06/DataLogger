@@ -10,15 +10,20 @@
 #include "dht11_task.h"
 
 static const char* TAG = "BUTTON_DRIVER";
+static volatile TickType_t last_isr_tick = 0;
 SemaphoreHandle_t xSignaler = NULL;
 
 static void IRAM_ATTR gpio_isr_handler(void* arg) {
-    BaseType_t higher_priority_task = pdFALSE;
+    TickType_t current_tick = xTaskGetTickCountFromISR();
 
-    xSemaphoreGiveFromISR(xSignaler, &higher_priority_task);
+    if (current_tick - last_isr_tick > pdMS_TO_TICKS(DEBOUNCE_TIME_MS)) {
+        last_isr_tick = current_tick;
+        BaseType_t higher_priority_task = pdFALSE;
+        xSemaphoreGiveFromISR(xSignaler, &higher_priority_task);
 
-    if(higher_priority_task == pdTRUE) {
-        portYIELD_FROM_ISR();
+        if(higher_priority_task == pdTRUE) {
+            portYIELD_FROM_ISR();
+        }
     }
 }
 

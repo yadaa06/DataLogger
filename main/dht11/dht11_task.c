@@ -15,11 +15,11 @@ SemaphoreHandle_t xDHT11Mutex = NULL;
 
 static float g_temperature = 0.0f;
 static float g_humidity = 0.0f;
-static uint64_t last_read_time = 0;
 
 static dht11_reading_t dht_history[DHT_HISTORY_SIZE];
 static int history_idx = 0;
 static int num_history_readings = 0;
+static uint64_t last_successful_read = 0;
 
 
 void dht11_get_history(dht11_reading_t *history_buffer, uint32_t *web_num_readings) {
@@ -40,6 +40,15 @@ void dht11_get_history(dht11_reading_t *history_buffer, uint32_t *web_num_readin
         ESP_LOGE(TAG, "ERROR: dht11_get_history failed to take mutex!");
         *web_num_readings = 0;
     }
+}
+
+uint64_t dht11_get_last_read() {
+    uint64_t time_read = 0;
+    if (xSemaphoreTake(xDHT11Mutex, portMAX_DELAY) == pdTRUE) {
+        time_read = last_successful_read;
+        xSemaphoreGive(xDHT11Mutex);
+    }
+    return time_read;
 }
 
 void dht11_notify_read() {
@@ -82,15 +91,17 @@ void dht11_read_task(void *pvParameters) {
     ESP_LOGI(TAG, "DHT11 reading task started");
     float temp_c = 0.0f;
     float hum_c = 0.0f;
-    read_dht_data(&temp_c, &hum_c, true);
 
+    uint64_t last_read_attempt_time = 0;
+    read_dht_data(&temp_c, &hum_c, true);
+    last_read_attempt_time = esp_timer_get_time();
     ESP_LOGI(TAG, "Dummy reading");
     vTaskDelay(3000);
 
     while(1) {
         esp_err_t ret;
         uint64_t current_time_us = esp_timer_get_time();
-        uint64_t time_since_last_read = current_time_us - last_read_time;
+        uint64_t time_since_last_read = current_time_us - last_read_attempt_time;
 
         if (time_since_last_read < MIN_READ_INTERVAL_US) {
             ESP_LOGW(TAG, "DHT11 read requested too soon (%.2f ms since last read). Waiting.", (float)time_since_last_read / 1000.0f);
@@ -105,6 +116,7 @@ void dht11_read_task(void *pvParameters) {
 
             continue;
         }
+        last_read_attempt_time = esp_timer_get_time();
 
         for (int attempts = 1; attempts <= MAXATTEMPTS; attempts++) {
             bool suppress_driver_logs = (attempts < MAXATTEMPTS);
@@ -137,6 +149,7 @@ void dht11_read_task(void *pvParameters) {
                 if (num_history_readings < DHT_HISTORY_SIZE) {
                     num_history_readings++;
                 }
+                last_successful_read = esp_timer_get_time();
 
                 xSemaphoreGive(xDHT11Mutex);
             } else {
