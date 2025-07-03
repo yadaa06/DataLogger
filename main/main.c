@@ -14,15 +14,16 @@
 #include "lcd_task.h"
 #include "wifi.h"
 #include "webserver.h"
-
+#include "button.h"
 
 #define DHT11_TASK_PRIORITY 15
 #define LCD_TASK_PRIORITY 10
+#define BUTTON_TASK_PRIORITY 12
 
 static const char* TAG = "APP_MAIN"; 
 TaskHandle_t dht11_task_handle = NULL;
 TaskHandle_t lcd_task_handle = NULL;
-SemaphoreHandle_t xDHT11Mutex = NULL;
+TaskHandle_t button_task_handle = NULL;
 
 void app_main(void) {
     ESP_LOGI(TAG, "Application Starting"); 
@@ -88,19 +89,35 @@ void app_main(void) {
         ESP_LOGI(TAG, "Server start successful");
        
 
-        BaseType_t xReturned = xTaskCreate(
+        BaseType_t xReturnedLCD = xTaskCreate(
             lcd_display_task,
             "LCD Displayer",
-            2048,
+            4096,
             NULL,
             LCD_TASK_PRIORITY,
             &lcd_task_handle 
         );
 
-        if (xReturned != pdPASS) {
+        if (xReturnedLCD != pdPASS) {
             ESP_LOGE(TAG, "Failed to create LCD Display Task");
         } else {
             ESP_LOGI(TAG, "LCD display task created with priority %d", LCD_TASK_PRIORITY);
+        }
+
+        button_task_init();
+        BaseType_t xReturnedButton = xTaskCreate(
+            button_press_task,
+            "Button Task",
+            2048,
+            NULL,
+            BUTTON_TASK_PRIORITY,
+            &button_task_handle
+        );
+
+        if (xReturnedButton != pdPASS) {
+            ESP_LOGE(TAG, "Failed to create Button task");
+        } else {
+            ESP_LOGI(TAG, "Button task created with priority %d", BUTTON_TASK_PRIORITY);
         }
 
     } else if (bits & WIFI_FAIL_BIT) {

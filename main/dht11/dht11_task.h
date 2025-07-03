@@ -17,7 +17,6 @@ extern SemaphoreHandle_t xDHT11Mutex;
 extern TaskHandle_t dht11_task_handle;
 extern TaskHandle_t lcd_task_handle;
 
-
 typedef struct {
     float temperature;
     float humidity;

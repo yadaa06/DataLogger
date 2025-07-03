@@ -11,6 +11,7 @@
 #include "dht11.h"
 
 static const char* TAG = "DHT11_TASK";
+SemaphoreHandle_t xDHT11Mutex = NULL;
 
 static float g_temperature = 0.0f;
 static float g_humidity = 0.0f;
