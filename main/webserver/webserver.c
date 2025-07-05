@@ -12,7 +12,10 @@
 static const char* TAG = "WEB_SERVER";
 extern const uint8_t _binary_index_html_start[] asm("_binary_index_html_start");
 extern const uint8_t _binary_index_html_end[]   asm("_binary_index_html_end");
-
+extern const uint8_t _binary_style_css_start[]  asm("_binary_style_css_start");
+extern const uint8_t _binary_style_css_end[]    asm("_binary_style_css_end");
+extern const uint8_t _binary_script_js_start[]  asm("_binary_script_js_start");
+extern const uint8_t _binary_script_js_end[]    asm("_binary_script_js_end");
 
 static esp_err_t _dht_history_get_handler(httpd_req_t *req) {
     dht11_reading_t *history_buffer = malloc(sizeof(dht11_reading_t) * DHT_HISTORY_SIZE);
@@ -117,25 +120,52 @@ static esp_err_t _root_get_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
+static esp_err_t _style_css_get_handler(httpd_req_t *req) {
+    ESP_LOGI(TAG, "Serving style.css");
+
+    httpd_resp_set_type(req, "text/css");
+    httpd_resp_send(req, (const char*)_binary_style_css_start, _binary_style_css_end - _binary_style_css_start);
+
+    return ESP_OK;
+}
+
+static esp_err_t _script_js_get_handler(httpd_req_t *req) {
+    ESP_LOGI(TAG, "Serving script.js");
+
+    httpd_resp_set_type(req, "application/javascript");
+    httpd_resp_send(req, (const char*)_binary_script_js_start, _binary_script_js_end - _binary_script_js_start);
+
+    return ESP_OK;
+}
+
 httpd_uri_t root_uri = {
     .uri = "/",
     .method = HTTP_GET,
     .handler = _root_get_handler,
-    .user_ctx = NULL
+};
+
+httpd_uri_t style_css_uri = {
+    .uri = "/style.css",
+    .method = HTTP_GET,
+    .handler = _style_css_get_handler,
+};
+
+httpd_uri_t script_js_uri = {
+    .uri = "/script.js",
+    .method = HTTP_GET,
+    .handler = _script_js_get_handler,
 };
 
 httpd_uri_t dht_data_uri = {
     .uri = "/dht_data",
     .method = HTTP_GET,
     .handler = _dht_data_get_handler,
-    .user_ctx = NULL
 };
 
 httpd_uri_t dht_history_uri = {
     .uri = "/dht_history",
     .method = HTTP_GET,
     .handler = _dht_history_get_handler,
-    .user_ctx = NULL
 };
 
 httpd_handle_t start_webserver() {
@@ -150,12 +180,25 @@ httpd_handle_t start_webserver() {
         return NULL;
     }
 
-    ESP_LOGI(TAG, "Registering URI handlers");
+    ESP_LOGI(TAG, "Registering URI handler");
     ret = httpd_register_uri_handler(server, &root_uri);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Error registering URI handlers");
+        ESP_LOGE(TAG, "Error registering root URI handler");
         return NULL;
     }
+
+    ret = httpd_register_uri_handler(server, &style_css_uri);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Error registering style css handlers");
+        return NULL;
+    }
+
+    ret = httpd_register_uri_handler(server, &script_js_uri);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Error registering script_js handler");
+        return NULL;
+    }
+
     ret = httpd_register_uri_handler(server, &dht_data_uri);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Error registering DHT data URI handler"); 

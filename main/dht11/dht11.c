@@ -10,13 +10,11 @@
 #include "rom/ets_sys.h"
 
 static const char* TAG = "DHT11_DRIVER"; 
-static portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 esp_err_t read_dht_data(float *temperature, float *humidity, bool suppressLogErrors){
     uint8_t data[5] = {0, 0, 0, 0, 0};
     esp_err_t ret = ESP_OK;
 
-    portENTER_CRITICAL(&spinlock);
     // 1. Send start signal
     gpio_set_direction(DHT11_PIN, GPIO_MODE_OUTPUT);
     gpio_set_level(DHT11_PIN, 0);
@@ -88,7 +86,6 @@ esp_err_t read_dht_data(float *temperature, float *humidity, bool suppressLogErr
     }
 
     exit_critical:
-    portEXIT_CRITICAL(&spinlock);
     
     if (ret != ESP_OK && !suppressLogErrors) {
         if (ret == ESP_ERR_INVALID_CRC) {

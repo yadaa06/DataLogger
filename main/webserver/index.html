@@ -2,251 +2,30 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <meta name = "viewport" content = "width=device-width, initial-scale = 1.0">
-    <title> ESP32 DHT11 Monitor</title>
-
-    <script src = "https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, Sans-Serif;
-            background-color: #1c1c1c;
-            color: #9e9e9e;
-            text-align: center;
-            margin: 20px;
-            padding: 0;
-            padding-bottom: 320px;
-            line-height: 1.6;
-        }
-        .container {
-            background-color: #303030;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            padding: 30px;
-            max-width: 500px;
-            margin: 50px auto;
-        }
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #555;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-            display: none;
-            margin: 10px auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .hidden {
-            display: none !important;
-        }
-        .visible {
-            display: block !important;
-        }
-        p {
-            font-size: 1.2em;
-            margin: 10px 0;
-            color: #8e8f8b;
-            font-weight: bold;
-        }
-        .last-updated {
-            font-size: 0.9em;
-            color: #757575;
-            margin-top: 20px;
-        }
-        button {
-            background-color: #797979;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, Sans-Serif;
-            font-weight: bold;
-            border-radius: 10px;
-            border: none;
-            padding: 10px 20px;
-            transition: background-color 0.3s ease;
-            cursor: pointer;
-            color: #030303;
-        }
-        button:hover{
-            background-color: #7c7d94;
-        }
-        .chart-container {
-            width: 400px;
-            height: 300px;
-            background-color: #303030;
-            border-radius: 10px;
-            padding: 15px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            margin: 10px; 
-        }
-        .bottom-wrapper {
-            display: flex; 
-            justify-content: center; 
-            align-items: flex-start; 
-            flex-wrap: wrap; 
-            margin-top: 20px;
-        }
-        .options-container {
-            display :flex;
-            flex-direction: column;
-            margin-left: 20px;
-        }
-        .options-button {
-            width: 180px;      
-            padding: 15px;
-            font-size: 1em;
-            background-color: #797979; 
-            color: #030303;
-            cursor: pointer;
-            border: 1px solid #666;
-            border-radius: 8px;
-            margin-bottom: 50px;
-            margin-top: 60px;
-            transition: background-color 0.2s;
-        }
-        .option-button:hover {
-            background-color: #7c7d94;
-        }
-        @media (max-width: 600px) {
-            .chart-container {
-                width: calc(100% - 20px);
-                left: 10px;
-                right: 10px;
-            }
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 DHT11 Monitor</title>
+    <link rel="stylesheet" type="text/css" href="/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div class = "container">
-        <h1> Current Readings</h1>
-        <p>Temperature: <span id = "temperature">--.--</span> &deg;F</p>
-        <p>Humidity: <span id = "humidity">--.-</span> %</p>
-        <div id = "loader" class = "loader"></div>
-        <p class = "last-updated">Last Updated: <span id = "lastupdated">N/A</span></p>
+    <div class="container">
+        <h1>Current Readings</h1>
+        <p>Temperature: <span id="temperature">--.--</span> &deg;F</p>
+        <p>Humidity: <span id="humidity">--.-</span> %</p>
+        <div id="loader" class="loader hidden"></div>
+        <p class="last-updated">Last Updated: <span id="lastupdated">N/A</span></p>
     </div>
-    <button id = "readNowButton">Get Current Reading Now</button>
-    <div class = "bottom-wrapper">
-        <div class = "chart-container">
-            <canvas id = "sensorChart"></canvas>
+    <button id="readNowButton">Get Current Reading Now</button>
+    <div class="bottom-wrapper">
+        <div class="chart-container">
+            <canvas id="sensorChart"></canvas>
         </div>
-        <div class = "options-container">
-            <button class = "options-button">Future Button 1</button>
-            <button class = "options-button">Future Button 2</button>
+        <div class="options-container">
+            <button class="options-button">Future Button 1</button>
+            <button class="options-button">Future Button 2</button>
         </div>
     </div>
     
+    <script src="/script.js" defer></script>
 </body>
-    <script>
-        let myChart;
-        const ctx = document.getElementById('sensorChart').getContext('2d');
-        const loader = document.getElementById('loader');
-        const readNowBtn = document.getElementById('readNowButton');
-
-        async function initializeChart() {
-            try {
-                const response = await fetch('/dht_history');
-                const data = await response.json();
-                
-                const labels = data.history.map(d => new Date(d.timestamp * 1000).toLocaleTimeString());
-                const tempData = data.history.map(d => d.temperature);
-                const humidityData = data.history.map(d => d.humidity);
-
-                myChart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Temperature (°F)',
-                            data: tempData,
-                            borderColor: 'rgba(255, 99, 132, 1)',
-                            yAxisID: 'y'
-                        }, {
-                            label: 'Humidity (%)',
-                            data: humidityData,
-                            borderColor: 'rgba(54, 162, 235, 1)',
-                            yAxisID: 'y1'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            x: { title: { display: true, text: 'Time' } },
-                            y: {
-                                type: 'linear',
-                                display: true,
-                                position: 'left',
-                                title: { display: true, text: 'Temperature (°F)' }
-                            },
-                            y1: {
-                                type: 'linear',
-                                display: true,
-                                position: 'right',
-                                title: { display: true, text: 'Humidity (%)' },
-                                grid: { drawOnChartArea: false }
-                            }
-                        }
-                    }
-                });
-            } catch (error) {
-                console.error("Error initializing chart:", error);
-            }
-        }
-
-        async function updateDHTdata() {
-            loader.classList.remove('hidden');
-            loader.classList.add('visible');
-            readNowBtn.disabled = true;
-            try {
-                const response = await fetch('/dht_data');
-                const data = await response.json();
-                
-                document.getElementById('temperature').textContent = data.temperature.toFixed(2);
-                document.getElementById('humidity').textContent = data.humidity.toFixed(1);
-                
-                const now = new Date();
-                const newLabel = now.toLocaleTimeString(); 
-                document.getElementById('lastupdated').textContent = newLabel; 
-                
-                console.log("Data updated successfully:", data);
-
-                if (myChart) {
-                    myChart.data.labels.push(newLabel);
-                    myChart.data.datasets[0].data.push(data.temperature);
-                    myChart.data.datasets[1].data.push(data.humidity);
-                
-                    if (myChart.data.labels.length > 60) {
-                        myChart.data.labels.shift();
-                        myChart.data.datasets.forEach(dataset => dataset.data.shift());
-                    }
-                    
-                    myChart.update();
-                }
-
-            } catch (error) {
-                console.error("Error fetching DHT data:", error);
-                document.getElementById('temperature').textContent = "Error";
-                document.getElementById('humidity').textContent = "Error";
-                document.getElementById('lastupdated').textContent = "Error";
-            } finally {
-                loader.classList.remove('visible');
-                loader.classList.add('hidden');
-                readNowBtn.disabled = false;
-            }
-        }
-        
-        if (readNowBtn) {
-            readNowBtn.addEventListener('click', () => {
-                console.log("Read Now Button Clicked");
-                updateDHTdata();
-            });
-        }
-        
-        document.addEventListener('DOMContentLoaded', () => {
-            initializeChart();
-            updateDHTdata();
-        });
-        setInterval(updateDHTdata, 60000);
-    </script>
 </html>
