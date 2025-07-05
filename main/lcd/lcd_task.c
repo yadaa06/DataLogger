@@ -39,8 +39,11 @@ void lcd_display_task(void *pvParameters) {
             current_mode = (current_mode + 1) % LCD_MODE_MAX;
         }
 
+        vTaskDelay(pdMS_TO_TICKS(2));
         lcd_i2c_clear(lcd_handle);
+        vTaskDelay(pdMS_TO_TICKS(2));
         lcd_i2c_home(lcd_handle);
+        vTaskDelay(pdMS_TO_TICKS(2));
 
         switch (current_mode) {
             case LCD_MODE_TEMP:
