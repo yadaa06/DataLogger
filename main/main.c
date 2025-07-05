@@ -15,6 +15,7 @@
 #include "wifi.h"
 #include "webserver.h"
 #include "button.h"
+#include "statusled.h"
 
 #define DHT11_TASK_PRIORITY 15
 #define LCD_TASK_PRIORITY 10
@@ -26,7 +27,9 @@ TaskHandle_t lcd_task_handle = NULL;
 TaskHandle_t button_task_handle = NULL;
 
 void app_main(void) {
-    ESP_LOGI(TAG, "Application Starting"); 
+    ESP_LOGI(TAG, "Application Starting");
+    status_led_init();
+    status_led_set_state(STATUS_LED_STATE_STARTING);
     esp_err_t ret;
 
     ret = wifi_driver_start_and_connect("YadaWiFi", "ted785tip9109coat");
@@ -41,6 +44,8 @@ void app_main(void) {
         return;
     }
     ESP_LOGI(TAG, "Waiting for WiFi connection...");
+
+    status_led_set_state(STATUS_LED_STATE_IN_PROGRESS);
 
     EventBits_t bits = xEventGroupWaitBits(wifi_event_group, WIFI_CONNECTED_BIT | WIFI_FAIL_BIT, pdFALSE, pdFALSE, portMAX_DELAY);
     
@@ -90,9 +95,13 @@ void app_main(void) {
             ESP_LOGI(TAG, "Button task created with priority %d", BUTTON_TASK_PRIORITY);
         }
 
+        status_led_set_state(STATUS_LED_STATE_READY);
+
     } else if (bits & WIFI_FAIL_BIT) {
         ESP_LOGE(TAG, "WiFi connection failed after multiple retries. Cannot proceed.");
+        status_led_set_state(STATUS_LED_STATE_ERROR);
     } else {
         ESP_LOGE(TAG, "UNEXPECTED EVENT during WiFi wait!");
+        status_led_set_state(STATUS_LED_STATE_ERROR);
     }
 }
