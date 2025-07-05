@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include <time.h>
+#include <math.h>
 #include "dht11_task.h"
 #include "dht11.h"
 #include "esp_log.h"
@@ -12,8 +13,8 @@
 static const char* TAG = "DHT11_TASK";
 SemaphoreHandle_t xDHT11Mutex = NULL;
 
-static float g_temperature = 0.0f;
-static float g_humidity = 0.0f;
+static float g_temperature = NAN;
+static float g_humidity = NAN;
 
 static dht11_reading_t dht_history[DHT_HISTORY_SIZE];
 static int history_idx = 0;

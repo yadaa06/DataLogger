@@ -2,6 +2,7 @@
 
 #include "webserver.h"
 #include <stdio.h>
+#include <math.h>
 #include <string.h>
 #include "esp_log.h"
 #include "esp_err.h"
@@ -96,6 +97,9 @@ static esp_err_t _dht_data_get_handler(httpd_req_t *req) {
     float humidity = dht11_get_humidity();
 
     char json_response[64];
+    if (isnan(temperature) || isnan(humidity)) {
+        int len = snprintf(json_response, sizeof(json_response), "{\"temperature\": null, \"humidity\": null}");
+    }
     int len = snprintf(json_response, sizeof(json_response), "{\"temperature\": %.2f, \"humidity\": %.1f}", temperature, humidity);
 
     if (len < 0 || len >= sizeof(json_response)) {
