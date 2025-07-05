@@ -35,12 +35,16 @@ async function initializeChart() {
                     x: { title: { display: true, text: 'Time' } },
                     y: {
                         type: 'linear',
+                        suggestedMin: 0,
+                        suggestedMax: 100,
                         display: true,
                         position: 'left',
                         title: { display: true, text: 'Temperature (°F)' }
                     },
                     y1: {
                         type: 'linear',
+                        suggestedMin: 0,
+                        suggestedMax: 100,
                         display: true,
                         position: 'right',
                         title: { display: true, text: 'Humidity (%)' },
