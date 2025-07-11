@@ -89,6 +89,7 @@ static esp_err_t _dht_history_get_handler(httpd_req_t *req) {
 
 
 static esp_err_t _dht_data_get_handler(httpd_req_t *req) { 
+    int len;
     dht11_notify_read();
 
     vTaskDelay(pdMS_TO_TICKS(500));
@@ -98,9 +99,9 @@ static esp_err_t _dht_data_get_handler(httpd_req_t *req) {
 
     char json_response[64];
     if (isnan(temperature) || isnan(humidity)) {
-        int len = snprintf(json_response, sizeof(json_response), "{\"temperature\": null, \"humidity\": null}");
+        len = snprintf(json_response, sizeof(json_response), "{\"temperature\": null, \"humidity\": null}");
     }
-    int len = snprintf(json_response, sizeof(json_response), "{\"temperature\": %.2f, \"humidity\": %.1f}", temperature, humidity);
+    len = snprintf(json_response, sizeof(json_response), "{\"temperature\": %.2f, \"humidity\": %.1f}", temperature, humidity);
 
     if (len < 0 || len >= sizeof(json_response)) {
         ESP_LOGE(TAG, "JSON response buffer too small or snprintf error!");

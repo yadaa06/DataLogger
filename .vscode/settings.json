@@ -24,6 +24,7 @@
     "stdbool.h": "c",
     "cstdlib": "c",
     "dht11_task.h": "c",
-    "task.h": "c"
+    "task.h": "c",
+    "statusled.h": "c"
   }
 }
