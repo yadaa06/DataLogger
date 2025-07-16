@@ -31,7 +31,6 @@ TaskHandle_t ir_decoder_task_handle = NULL;
 
 void app_main(void) {
     ESP_LOGI(TAG, "Application Starting");
-    gpio_install_isr_service(0);
     status_led_init();
     status_led_set_state(STATUS_LED_STATE_STARTING);
 

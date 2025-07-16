@@ -36,7 +36,12 @@ static void button_task_init() {
         ESP_LOGE(TAG, "FAILED TO CREATE SEMAPHORE: EXPECT UNSTABLE BEHAVIOR");
         return;
     }
-    gpio_isr_handler_add(BUTTON_GPIO, gpio_isr_handler, NULL);
+    esp_err_t isr_service_result = gpio_install_isr_service(0);
+    if (isr_service_result != ESP_OK && isr_service_result != ESP_ERR_INVALID_STATE) {
+        ESP_LOGE(TAG, "Failed to install ISR service: %s", esp_err_to_name(isr_service_result));
+        return;
+    }
+    ESP_ERROR_CHECK(gpio_isr_handler_add(BUTTON_GPIO, gpio_isr_handler, NULL));
 }
 
 void button_press_task(void* pvParameters) {
