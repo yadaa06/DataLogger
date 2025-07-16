@@ -112,6 +112,7 @@ static esp_err_t _dht_data_get_handler(httpd_req_t *req) {
     httpd_resp_set_type(req, "application/json");
     httpd_resp_send(req, json_response, len);
     ESP_LOGI(TAG, "Sent DHT data: %s", json_response);
+
     return ESP_OK;
 }
 
@@ -174,47 +175,16 @@ httpd_uri_t dht_history_uri = {
 };
 
 httpd_handle_t start_webserver() {
-    esp_err_t ret;
     httpd_handle_t server = NULL;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
     ESP_LOGI(TAG, "Starting HTTP Server");
-    ret = httpd_start(&server, &config);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Error starting HTTP server");
-        return NULL;
-    }
-
-    ESP_LOGI(TAG, "Registering URI handler");
-    ret = httpd_register_uri_handler(server, &root_uri);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Error registering root URI handler");
-        return NULL;
-    }
-
-    ret = httpd_register_uri_handler(server, &style_css_uri);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Error registering style css handlers");
-        return NULL;
-    }
-
-    ret = httpd_register_uri_handler(server, &script_js_uri);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Error registering script_js handler");
-        return NULL;
-    }
-
-    ret = httpd_register_uri_handler(server, &dht_data_uri);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Error registering DHT data URI handler"); 
-        return NULL;
-    }
-
-    ret = httpd_register_uri_handler(server, &dht_history_uri);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Error registering DHT history URI handler"); 
-        return NULL;
-    } 
+    ESP_ERROR_CHECK(httpd_start(&server, &config));
+    ESP_ERROR_CHECK(httpd_register_uri_handler(server, &root_uri));
+    ESP_ERROR_CHECK(httpd_register_uri_handler(server, &style_css_uri));
+    ESP_ERROR_CHECK(httpd_register_uri_handler(server, &script_js_uri));
+    ESP_ERROR_CHECK(httpd_register_uri_handler(server, &dht_data_uri));
+    ESP_ERROR_CHECK(httpd_register_uri_handler(server, &dht_history_uri));
     
     return server;
 }

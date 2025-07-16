@@ -20,29 +20,20 @@ static i2c_master_bus_handle_t _lcd_i2c_master_init(void) {
     };
 
     i2c_master_bus_handle_t i2c_bus_handle;
-    esp_err_t err = i2c_new_master_bus(&i2c_conf, &i2c_bus_handle);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to create new I2C master bus: %s", esp_err_to_name(err));
-        return NULL;
-    }
-
+    ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_conf, &i2c_bus_handle));
     return i2c_bus_handle;
 }
 
 static esp_err_t _lcd_send_byte_i2c(lcd_i2c_handle_t *lcd, uint8_t val) {
     uint8_t write_buffer[1] = {val};
-    esp_err_t ret = i2c_master_transmit(
+    ESP_ERROR_CHECK(i2c_master_transmit(
         lcd->i2c_dev_handle,
         write_buffer,
         sizeof(write_buffer),
         pdMS_TO_TICKS(1000)
-    );
+    ));
 
-    if (ret != ESP_OK) {
-        ESP_LOGI(TAG, "FAILED TO WRITE BYTE TO LCD: %s", esp_err_to_name(ret));
-    }
-
-    return ret;
+    return ESP_OK;
 }
 
 static lcd_i2c_handle_t* _lcd_i2c_create(i2c_master_bus_handle_t i2c_bus_handle, uint8_t address, uint8_t cols, uint8_t rows) {
@@ -58,13 +49,7 @@ static lcd_i2c_handle_t* _lcd_i2c_create(i2c_master_bus_handle_t i2c_bus_handle,
     };
 
     i2c_master_dev_handle_t i2c_dev_handle = NULL;
-    esp_err_t err = i2c_master_bus_add_device(i2c_bus_handle, &dev_cfg, &i2c_dev_handle);
-
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to add I2C device (LCD) to bus: %s", esp_err_to_name(err));
-        return NULL;
-    }
-    ESP_LOGI(TAG, "I2C device (LCD at 0x%02x) added to bus", address);
+    ESP_ERROR_CHECK(i2c_master_bus_add_device(i2c_bus_handle, &dev_cfg, &i2c_dev_handle));
 
     lcd_i2c_handle_t* lcd = (lcd_i2c_handle_t*) calloc(1, sizeof(lcd_i2c_handle_t));
     if (lcd == NULL) {
@@ -78,12 +63,10 @@ static lcd_i2c_handle_t* _lcd_i2c_create(i2c_master_bus_handle_t i2c_bus_handle,
     lcd->rows = rows;
     lcd->backlight_state = 0; 
 
-    ESP_LOGI(TAG, "LCD handle created for device handle %p", i2c_dev_handle);
     return lcd;
 }
 
 static esp_err_t _lcd_write_4bit_nibble(lcd_i2c_handle_t* lcd, uint8_t nibble, uint8_t mode) {
-    esp_err_t ret;
     uint8_t data_to_send;
 
     data_to_send = mode | lcd -> backlight_state;
@@ -105,42 +88,19 @@ static esp_err_t _lcd_write_4bit_nibble(lcd_i2c_handle_t* lcd, uint8_t nibble, u
     }
 
     data_to_send |= PCF8574_EN;
-    ret = _lcd_send_byte_i2c(lcd, data_to_send);
-
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "FAILED TO send nibble (HIGH)");
-        return ret;
-    }
-
+    ESP_ERROR_CHECK(_lcd_send_byte_i2c(lcd, data_to_send));
     esp_rom_delay_us(1);
 
     data_to_send &= ~PCF8574_EN;
-    ret = _lcd_send_byte_i2c(lcd, data_to_send);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "FAILED TO send nibble (LOW)");
-        return ret;
-    }
-
+    ESP_ERROR_CHECK(_lcd_send_byte_i2c(lcd, data_to_send));
     esp_rom_delay_us(50);
-
 
     return ESP_OK;
 }
 
 static esp_err_t _lcd_send_cmd(lcd_i2c_handle_t* lcd, uint8_t cmd) {
-    esp_err_t ret;
-
-    ret = _lcd_write_4bit_nibble(lcd, (cmd >> 4) & 0x0F, LCD_RS_COMMAND);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to send high nibble of command 0x%02x", cmd);
-        return ret;
-    }
-
-    ret = _lcd_write_4bit_nibble(lcd, cmd & 0x0F, LCD_RS_COMMAND);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to send low nibble of command 0x%02x", cmd);
-        return ret;
-    }
+    ESP_ERROR_CHECK(_lcd_write_4bit_nibble(lcd, (cmd >> 4) & 0x0F, LCD_RS_COMMAND));
+    ESP_ERROR_CHECK(_lcd_write_4bit_nibble(lcd, cmd & 0x0F, LCD_RS_COMMAND));
 
     if (cmd == LCD_CLEARDISPLAY || cmd == LCD_RETURNHOME) {
         vTaskDelay(pdMS_TO_TICKS(2));
@@ -153,20 +113,8 @@ static esp_err_t _lcd_send_cmd(lcd_i2c_handle_t* lcd, uint8_t cmd) {
 }
 
 static esp_err_t _lcd_send_data(lcd_i2c_handle_t* lcd, uint8_t data) {
-    esp_err_t ret;
-    
-    ret = _lcd_write_4bit_nibble(lcd, (data >> 4) & 0x0F, LCD_RS_DATA);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to send high nibble of data 0x%02x", data);
-        return ret;
-    }
-
-    ret = _lcd_write_4bit_nibble(lcd, data & 0x0F, LCD_RS_DATA);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to send low nibble of data 0x%02x", data);
-        return ret;
-    }
-
+    ESP_ERROR_CHECK(_lcd_write_4bit_nibble(lcd, (data >> 4) & 0x0F, LCD_RS_DATA));
+    ESP_ERROR_CHECK(_lcd_write_4bit_nibble(lcd, data & 0x0F, LCD_RS_DATA));
     esp_rom_delay_us(50);
 
     return ESP_OK;
@@ -212,11 +160,7 @@ void lcd_i2c_backlight(lcd_i2c_handle_t* lcd, bool on) {
         lcd -> backlight_state = 0;
         ESP_LOGI(TAG, "LCD Backlight OFF");
     }
-
-    esp_err_t ret = _lcd_send_byte_i2c(lcd, data_to_send);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to control backlight: %s", esp_err_to_name(ret));
-    }
+    ESP_ERROR_CHECK(_lcd_send_byte_i2c(lcd, data_to_send));
 }
 
 esp_err_t lcd_i2c_clear(lcd_i2c_handle_t* lcd) {

@@ -11,7 +11,6 @@ static const char* TAG = "LED_DRIVER";
 TaskHandle_t led_task_handle = NULL;
 
 esp_err_t status_led_init() {
-    esp_err_t ret;
     ledc_timer_config_t ledc_timer = {
         .speed_mode = LEDC_MODE,
         .duty_resolution = LEDC_DUTY_RES,
@@ -20,11 +19,7 @@ esp_err_t status_led_init() {
         .clk_cfg = LEDC_AUTO_CLK
     };
 
-    ret = ledc_timer_config(&ledc_timer);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "LED TIMER CONFIGURATION FAILED");
-        return ESP_FAIL;
-    }
+    ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
 
     ledc_channel_config_t ledc_channel[3] = {
         {
@@ -57,10 +52,7 @@ esp_err_t status_led_init() {
     };
 
     for (int i = 0; i < 3; i++) {
-        ret = ledc_channel_config(&ledc_channel[i]);
-        if (ret != ESP_OK) {
-            return ESP_FAIL;
-        }
+        ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel[i]));
     }
 
     return ESP_OK;

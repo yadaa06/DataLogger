@@ -10,7 +10,7 @@
 
 static const char* TAG = "BUTTON_DRIVER";
 static volatile TickType_t last_isr_tick = 0;
-SemaphoreHandle_t xSignaler = NULL;
+static SemaphoreHandle_t xSignaler = NULL;
 
 static void IRAM_ATTR gpio_isr_handler(void* arg) {
     TickType_t current_tick = xTaskGetTickCountFromISR();
@@ -26,7 +26,7 @@ static void IRAM_ATTR gpio_isr_handler(void* arg) {
     }
 }
 
-void button_task_init() {
+static void button_task_init() {
     gpio_reset_pin(BUTTON_GPIO);
     gpio_set_direction(BUTTON_GPIO, GPIO_MODE_INPUT);
     gpio_set_intr_type(BUTTON_GPIO, GPIO_INTR_NEGEDGE);
@@ -36,8 +36,6 @@ void button_task_init() {
         ESP_LOGE(TAG, "FAILED TO CREATE SEMAPHORE: EXPECT UNSTABLE BEHAVIOR");
         return;
     }
-    ESP_LOGI(TAG, "Semaphore Created");
-    gpio_install_isr_service(0);
     gpio_isr_handler_add(BUTTON_GPIO, gpio_isr_handler, NULL);
 }
 
