@@ -9,7 +9,6 @@
 #include "driver/gptimer.h"
 #include "driver/gpio.h"
 
-
 static const char* TAG = "IR_DRIVER";
 static uint64_t last_time = 0;
 static volatile uint8_t currIndex = 0;
@@ -22,6 +21,11 @@ static void IRAM_ATTR gpio_isr_handler(void* arg) {
     uint64_t curr_time, pulse_length;
     gptimer_get_raw_count(GPtimer, &curr_time);
 
+    if (last_time == 0) {
+        last_time = curr_time;
+        return;
+    }
+
     pulse_length = curr_time - last_time;
     last_time = curr_time;
 
@@ -30,21 +34,17 @@ static void IRAM_ATTR gpio_isr_handler(void* arg) {
             BaseType_t higher_priority_task = pdFALSE;
             xSemaphoreGiveFromISR(xSignaler, &higher_priority_task);
         }
-
-        currIndex = 0;
     } else {
         if (currIndex < IR_TIMES_SIZE) {
             ir_times[currIndex++] = pulse_length;
         }
     }
-
 }
 
 static void decoder_task_init() {
     gpio_reset_pin(IR_PIN);
     gpio_set_direction(IR_PIN, GPIO_MODE_INPUT);
     gpio_set_intr_type(IR_PIN, GPIO_INTR_ANYEDGE);
-    gpio_set_pull_mode(IR_PIN, GPIO_PULLUP_ENABLE);
     
     gptimer_config_t timer_config = {
         .clk_src = GPTIMER_CLK_SRC_DEFAULT,
@@ -78,7 +78,7 @@ void ir_decoder_task(void* pvParameters) {
 
     while (1) {
         if (xSemaphoreTake(xSignaler, portMAX_DELAY) == pdTRUE) {
-            ESP_LOGI(TAG, "IR signal received!");
+            ESP_LOGI(TAG, "IR Signal Received");
         }
     }
 }

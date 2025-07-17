@@ -60,7 +60,7 @@ void app_main(void) {
     }
         
     ESP_LOGI(TAG, "WiFi connected successfully!\n");
-    vTaskDelay(pdMS_TO_TICKS(5000)); 
+    vTaskDelay(pdMS_TO_TICKS(5000));
     setup_time();
 
     BaseType_t xReturnedPinned = xTaskCreatePinnedToCore(dht11_read_task, "DHT11 Reader", 4096, NULL, DHT11_TASK_PRIORITY, &dht11_task_handle, 1);
@@ -99,9 +99,9 @@ void app_main(void) {
     xReturned = xTaskCreate(ir_decoder_task, "IR Decoder Task", 4096, NULL, IR_DECODER_TASK_PRIORITY, &ir_decoder_task_handle);
 
     if (xReturned != pdPASS) {
-        ESP_LOGE(TAG, "Failed to create Button task");
+        ESP_LOGE(TAG, "Failed to create IR Decoder task");
     } else {
-        ESP_LOGI(TAG, "Button task created with priority %d", BUTTON_TASK_PRIORITY);
+        ESP_LOGI(TAG, "IR decoder task created with priority %d", BUTTON_TASK_PRIORITY);
     }
 
     status_led_set_state(STATUS_LED_STATE_READY);
