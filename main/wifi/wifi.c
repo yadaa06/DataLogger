@@ -36,7 +36,6 @@ static esp_err_t _wifi_driver_init(void) {
 static esp_err_t _wifi_driver_configure_station(void) {
     retry_num = 0;
 
-    ESP_LOGI(TAG, "Configuring Wifi in Station Mode");
     ESP_ERROR_CHECK(esp_netif_init());
 
     esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();

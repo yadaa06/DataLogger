@@ -128,7 +128,7 @@ void ir_decoder_task(void* pvParameters) {
 
     while (1) {
         if (xSemaphoreTake(xSignaler, portMAX_DELAY) == pdTRUE) {
-            vTaskDelay(pdMS_TO_TICKS(2000));
+            vTaskDelay(pdMS_TO_TICKS(500));
             uint32_t local_times[IR_TIMES_SIZE];
             uint8_t local_index;
 
