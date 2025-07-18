@@ -135,6 +135,7 @@ void ir_decoder_task(void* pvParameters) {
             portDISABLE_INTERRUPTS();
             local_index = currIndex;
             currIndex = 0;
+            last_time = 0;
 
             for (int i = 0; i < local_index; i++) {
                 local_times[i] = ir_times[i];

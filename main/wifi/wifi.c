@@ -124,15 +124,12 @@ static void _wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t 
 static esp_err_t _wifi_driver_event_handling() {
     esp_err_t ret;
 
-    ESP_LOGI(TAG, "Starting Wifi Event Handling");
-
     wifi_event_group = xEventGroupCreate();
 
     if (wifi_event_group == NULL) {
         ESP_LOGE(TAG, "Failed to create WiFi Group");
         return ESP_FAIL;
     }
-    ESP_LOGI(TAG, "WiFi event group created");
 
     ret = esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &_wifi_event_handler, NULL);
     if (ret != ESP_OK) {
@@ -140,7 +137,6 @@ static esp_err_t _wifi_driver_event_handling() {
         vEventGroupDelete(wifi_event_group);
         return ret;
     }
-    ESP_LOGI(TAG, "Registered handler for all WIFI_EVENTs.");
 
     ret = esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &_wifi_event_handler, NULL);
     if (ret != ESP_OK) {
@@ -149,9 +145,7 @@ static esp_err_t _wifi_driver_event_handling() {
         vEventGroupDelete(wifi_event_group);
         return ret;
     }
-    ESP_LOGI(TAG, "Registered handler for IP_EVENT_STA_GOT_IP.");
 
-    ESP_LOGI(TAG, "WiFi event handling setup complete.");
     return ESP_OK;
 }
 
