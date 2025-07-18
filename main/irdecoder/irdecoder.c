@@ -30,7 +30,7 @@ static void IRAM_ATTR gpio_isr_handler(void* arg) {
     last_time = curr_time;
 
     if (pulse_length > 15000) {
-        if (currIndex > 10) {
+        if (currIndex > 50) {
             BaseType_t higher_priority_task = pdFALSE;
             xSemaphoreGiveFromISR(xSignaler, &higher_priority_task);
         }
@@ -72,7 +72,7 @@ static void decoder_task_init() {
 }
 
 static esp_err_t ir_decode(volatile uint32_t* timings, uint8_t len, uint8_t* address, uint8_t* command) {
-    if (len < 60) {
+    if (len < 50) {
         ESP_LOGE(TAG, "IR signal seems to too short");
         return ESP_FAIL;
     }
