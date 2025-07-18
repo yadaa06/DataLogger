@@ -101,7 +101,7 @@ void app_main(void) {
     if (xReturned != pdPASS) {
         ESP_LOGE(TAG, "Failed to create IR Decoder task");
     } else {
-        ESP_LOGI(TAG, "IR decoder task created with priority %d", BUTTON_TASK_PRIORITY);
+        ESP_LOGI(TAG, "IR decoder task created with priority %d", IR_DECODER_TASK_PRIORITY);
     }
 
     status_led_set_state(STATUS_LED_STATE_READY);
