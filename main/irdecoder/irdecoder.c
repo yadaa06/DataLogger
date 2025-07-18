@@ -29,7 +29,7 @@ static void IRAM_ATTR gpio_isr_handler(void* arg) {
     pulse_length = curr_time - last_time;
     last_time = curr_time;
 
-    if (pulse_length > 5000) {
+    if (pulse_length > 15000) {
         if (currIndex > 10) {
             BaseType_t higher_priority_task = pdFALSE;
             xSemaphoreGiveFromISR(xSignaler, &higher_priority_task);
@@ -71,6 +71,56 @@ static void decoder_task_init() {
     gptimer_start(GPtimer);
 }
 
+static esp_err_t ir_decode(volatile uint32_t* timings, uint8_t len, uint8_t* address, uint8_t* command) {
+    if (len < 60) {
+        ESP_LOGE(TAG, "IR signal seems to too short");
+        return ESP_FAIL;
+    }
+
+    if (!IR_MATCH(timings[0], NEC_START_PULSE) || !IR_MATCH(timings[1], NEC_START_SPACE)) {
+        ESP_LOGE(TAG, "IR SIGNAL doesn't follow NEC start protocol");
+        return ESP_FAIL;
+    }
+
+    uint32_t decoded_data = 0;
+
+    for (int i = 0; i < 32; i++) {
+        uint32_t pulse = timings[i * 2 + 2];
+        uint32_t space = timings[i * 2 + 3];
+
+        if (!IR_MATCH(pulse, NEC_BIT_PULSE)) {
+            ESP_LOGE(TAG, "IR bit not a valid bit pulse");
+            return ESP_FAIL;
+        }
+
+        decoded_data <<= 1;
+
+        if (IR_MATCH(space, NEC_ONE_SPACE)) {
+            decoded_data |= 1;
+        } else if (IR_MATCH(space, NEC_ZERO_SPACE)) {
+            decoded_data |= 0;
+        } else {
+            ESP_LOGE(TAG, "IR bit not a valid bit space");
+            return ESP_FAIL;
+        }
+    }
+
+    uint8_t addr = (decoded_data >> 24) & 0xFF;
+    uint8_t inv_addr = (decoded_data >> 16) & 0xFF;
+    uint8_t cmd = (decoded_data >> 8) & 0xFF;
+    uint8_t inv_cmd = (decoded_data) & 0xFF;
+
+    if ((addr ^ inv_addr) != 0xFF || (cmd ^ inv_cmd) != 0xFF) {
+        ESP_LOGE(TAG, "Checksum Failed");
+        return ESP_FAIL;
+    }
+
+    *address = addr;
+    *command = cmd;
+
+    return ESP_OK;
+}
+
 void ir_decoder_task(void* pvParameters) {
     (void)pvParameters;
 
@@ -78,7 +128,26 @@ void ir_decoder_task(void* pvParameters) {
 
     while (1) {
         if (xSemaphoreTake(xSignaler, portMAX_DELAY) == pdTRUE) {
-            ESP_LOGI(TAG, "IR Signal Received");
+            uint32_t local_times[IR_TIMES_SIZE];
+            uint8_t local_index;
+
+            portDISABLE_INTERRUPTS();
+            local_index = currIndex;
+            currIndex = 0;
+
+            for (int i = 0; i < local_index; i++) {
+                local_times[i] = ir_times[i];
+                ir_times[i] = 0;
+            }
+            portENABLE_INTERRUPTS();
+
+            uint8_t decoded_address, decoded_cmd;
+
+            if (ir_decode(local_times, local_index, &decoded_address, &decoded_cmd) == ESP_OK) {
+                ESP_LOGI(TAG, "IR SIGNAL DECODED. Command: 0x%02X, Address: 0x%02X", decoded_cmd, decoded_address);
+            } else {
+                ESP_LOGW(TAG, "IR SIGNAL DECODE FAILED");
+            }
         }
     }
 }
