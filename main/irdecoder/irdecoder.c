@@ -86,8 +86,8 @@ static void decoder_task_init() {
     gptimer_start(GPtimer);
 }
 
-static void ir_decode(ir_result_t *result) {
-    result->type = IR_FRAME_TYPE_INVALID;
+static void ir_decode(ir_result_t* result) {
+    result->type    = IR_FRAME_TYPE_INVALID;
     result->address = 0;
     result->command = 0;
 
@@ -118,17 +118,17 @@ static void ir_decode(ir_result_t *result) {
             }
         }
 
-        uint8_t addr = (decoded_data >> 24) & 0xFF;
+        uint8_t addr     = (decoded_data >> 24) & 0xFF;
         uint8_t inv_addr = (decoded_data >> 16) & 0xFF;
-        uint8_t cmd = (decoded_data >> 8) & 0xFF;
-        uint8_t inv_cmd = (decoded_data) & 0xFF;
+        uint8_t cmd      = (decoded_data >> 8) & 0xFF;
+        uint8_t inv_cmd  = (decoded_data) & 0xFF;
 
         if ((addr ^ inv_addr) != 0xFF || (cmd ^ inv_cmd) != 0xFF) {
             ESP_LOGE(TAG, "Checksum Failed");
             return;
         }
 
-        result->type = IR_FRAME_TYPE_DATA;
+        result->type    = IR_FRAME_TYPE_DATA;
         result->address = addr;
         result->command = cmd;
         return;
@@ -138,7 +138,6 @@ static void ir_decode(ir_result_t *result) {
         result->type = IR_FRAME_TYPE_REPEAT;
         return;
     }
-
 }
 
 void ir_decoder_task(void* pvParameters) {
