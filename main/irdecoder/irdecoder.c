@@ -144,10 +144,6 @@ void ir_decoder_task(void* pvParameters) {
             last_time = 0;
             gpio_isr_handler_add(IR_PIN, gpio_isr_handler, NULL);
 
-            for (int i = 0; i < local_index; i++) {
-                ESP_LOGI(TAG, "%ld", local_times[i]);
-            }
-
             uint8_t decoded_address, decoded_cmd;
             if (ir_decode(local_times, local_index, &decoded_address, &decoded_cmd) == ESP_OK) {
                 ESP_LOGI(TAG, "IR SIGNAL DECODED. Command: 0x%02X, Address: 0x%02X", decoded_cmd, decoded_address);
