@@ -19,4 +19,16 @@
 
 void ir_decoder_task(void* pvParameters);
 
+typedef enum {
+    IR_FRAME_TYPE_DATA,
+    IR_FRAME_TYPE_REPEAT,
+    IR_FRAME_TYPE_INVALID,
+} ir_frame_type_t;
+
+typedef struct {
+    ir_frame_type_t type;
+    uint8_t address;
+    uint8_t command;
+} ir_result_t;
+
 #endif

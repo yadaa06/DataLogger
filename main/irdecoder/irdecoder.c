@@ -1,6 +1,7 @@
 // irdecoder.c
 
 #include <string.h>
+#include <math.h>
 #include "irdecoder.h"
 #include "esp_log.h"
 #include "esp_timer.h"
@@ -85,54 +86,59 @@ static void decoder_task_init() {
     gptimer_start(GPtimer);
 }
 
-static esp_err_t ir_decode(volatile uint32_t* timings, uint8_t len, uint8_t* address, uint8_t* command) {
-    if (len < 50) {
-        ESP_LOGE(TAG, "IR signal seems to too short");
-        return ESP_FAIL;
-    }
+static void ir_decode(ir_result_t *result) {
+    result->type = IR_FRAME_TYPE_INVALID;
+    result->address = 0;
+    result->command = 0;
 
-    if (!IR_MATCH(timings[0], NEC_START_PULSE) || !IR_MATCH(timings[1], NEC_START_SPACE)) {
-        ESP_LOGE(TAG, "IR SIGNAL doesn't follow NEC start protocol");
-        return ESP_FAIL;
-    }
-
-    uint32_t decoded_data = 0;
-
-    for (int i = 0; i < 32; i++) {
-        uint32_t pulse = timings[i * 2 + 2];
-        uint32_t space = timings[i * 2 + 3];
-
-        if (!IR_MATCH(pulse, NEC_BIT_PULSE)) {
-            ESP_LOGE(TAG, "IR bit not a valid bit pulse");
-            return ESP_FAIL;
+    if (decode_len > 50) {
+        if (!IR_MATCH(decode_buffer_add[0], NEC_START_PULSE) || !IR_MATCH(decode_buffer_add[1], NEC_START_SPACE)) {
+            ESP_LOGE(TAG, "IR SIGNAL doesn't follow NEC start protocol");
+            return;
         }
 
-        decoded_data <<= 1;
+        uint32_t decoded_data = 0;
+        for (int i = 0; i < 32; i++) {
+            uint32_t pulse = decode_buffer_add[i * 2 + 2];
+            uint32_t space = decode_buffer_add[i * 2 + 3];
 
-        if (IR_MATCH(space, NEC_ONE_SPACE)) {
-            decoded_data |= 1;
-        } else if (IR_MATCH(space, NEC_ZERO_SPACE)) {
-            decoded_data |= 0;
-        } else {
-            ESP_LOGE(TAG, "IR bit not a valid bit space");
-            return ESP_FAIL;
+            if (!IR_MATCH(pulse, NEC_BIT_PULSE)) {
+                ESP_LOGE(TAG, "IR bit not a valid bit pulse");
+                return;
+            }
+
+            decoded_data <<= 1;
+            if (IR_MATCH(space, NEC_ONE_SPACE)) {
+                decoded_data |= 1;
+            } else if (IR_MATCH(space, NEC_ZERO_SPACE)) {
+                decoded_data |= 0;
+            } else {
+                ESP_LOGE(TAG, "IR bit not a valid bit space");
+                return;
+            }
         }
+
+        uint8_t addr = (decoded_data >> 24) & 0xFF;
+        uint8_t inv_addr = (decoded_data >> 16) & 0xFF;
+        uint8_t cmd = (decoded_data >> 8) & 0xFF;
+        uint8_t inv_cmd = (decoded_data) & 0xFF;
+
+        if ((addr ^ inv_addr) != 0xFF || (cmd ^ inv_cmd) != 0xFF) {
+            ESP_LOGE(TAG, "Checksum Failed");
+            return;
+        }
+
+        result->type = IR_FRAME_TYPE_DATA;
+        result->address = addr;
+        result->command = cmd;
+        return;
     }
 
-    uint8_t addr = (decoded_data >> 24) & 0xFF;
-    uint8_t inv_addr = (decoded_data >> 16) & 0xFF;
-    uint8_t cmd = (decoded_data >> 8) & 0xFF;
-    uint8_t inv_cmd = (decoded_data) & 0xFF;
-
-    if ((addr ^ inv_addr) != 0xFF || (cmd ^ inv_cmd) != 0xFF) {
-        ESP_LOGE(TAG, "Checksum Failed");
-        return ESP_FAIL;
+    else if (decode_len > 0 && decode_len < 10) {
+        result->type = IR_FRAME_TYPE_REPEAT;
+        return;
     }
 
-    *address = addr;
-    *command = cmd;
-
-    return ESP_OK;
 }
 
 void ir_decoder_task(void* pvParameters) {
@@ -142,16 +148,23 @@ void ir_decoder_task(void* pvParameters) {
 
     while (1) {
         if (xSemaphoreTake(xSignaler, portMAX_DELAY) == pdTRUE) {
-            if (decode_len > 50) {
-                uint8_t addr, cmd;
-                if (ir_decode((uint32_t*)decode_buffer_add, decode_len, &addr, &cmd) == ESP_OK) {
-                    ESP_LOGI(TAG, "IR Signal Received! Address: 0x%02X, Command 0x%02X", addr, cmd);
-                } else {
-                    ESP_LOGE(TAG, "IR SIGNAL RECEIVED BUT FAILED TO DECODE");
+                ir_result_t decoded_signal;
+                ir_decode(&decoded_signal);
+
+                switch (decoded_signal.type) {
+                case IR_FRAME_TYPE_DATA:
+                    ESP_LOGI(TAG, "Data Frame! Address: 0x%02X, Command: 0x%02X",
+                             decoded_signal.address, decoded_signal.command);
+                    break;
+
+                case IR_FRAME_TYPE_REPEAT:
+                    ESP_LOGI(TAG, "Repeat Code Detected");
+                    break;
+
+                case IR_FRAME_TYPE_INVALID:
+                    ESP_LOGW(TAG, "Invalid Frame Detected");
+                    break;
                 }
-            } else if (decode_len > 0 && decode_len < 10) {
-                ESP_LOGI(TAG, "Repeat Code Detected");
-            }
         }
     }
 }
