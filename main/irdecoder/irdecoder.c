@@ -12,8 +12,12 @@
 
 static const char* TAG = "IR_DRIVER";
 static uint64_t last_time = 0;
-static volatile uint8_t currIndex = 0;
-static volatile uint32_t ir_times[IR_TIMES_SIZE];
+static volatile uint8_t active_idx = 0;
+static volatile uint32_t ir_buffer_A[IR_TIMES_SIZE];
+static volatile uint32_t ir_buffer_B[IR_TIMES_SIZE];
+static volatile uint32_t *active_buffer_add = ir_buffer_A;
+static volatile uint32_t *decode_buffer_add = ir_buffer_B;
+static volatile uint8_t decode_len = 0;
 static SemaphoreHandle_t xSignaler = NULL;
 
 gptimer_handle_t GPtimer;
@@ -31,18 +35,22 @@ static void IRAM_ATTR gpio_isr_handler(void* arg) {
     last_time = curr_time;
 
     if (pulse_length > 15000) {
-        if (currIndex > 50) {
+        if (active_idx > 0) {
+            decode_len = active_idx;
+            volatile uint32_t *tmp = active_buffer_add;
+            active_buffer_add = decode_buffer_add;
+            decode_buffer_add = tmp;
+
             BaseType_t higher_priority_task = pdFALSE;
             xSemaphoreGiveFromISR(xSignaler, &higher_priority_task);
-        } else {
-            currIndex = 0;
         }
+        active_idx = 0;
     } else {
-        if (currIndex < IR_TIMES_SIZE) {
-            ir_times[currIndex++] = pulse_length;
+        if (active_idx < IR_TIMES_SIZE) {
+            active_buffer_add[active_idx++] = pulse_length;
         } else {
             last_time = 0;
-            currIndex = 0;
+            active_idx = 0;
         }
     }
 }
@@ -134,21 +142,15 @@ void ir_decoder_task(void* pvParameters) {
 
     while (1) {
         if (xSemaphoreTake(xSignaler, portMAX_DELAY) == pdTRUE) {
-            gpio_isr_handler_remove(IR_PIN);
-
-            uint32_t local_times[IR_TIMES_SIZE];
-            uint8_t local_index = currIndex;
-
-            memcpy(local_times, (void*)ir_times, local_index * sizeof(local_times[0]));
-            currIndex = 0;
-            last_time = 0;
-            gpio_isr_handler_add(IR_PIN, gpio_isr_handler, NULL);
-
-            uint8_t decoded_address, decoded_cmd;
-            if (ir_decode(local_times, local_index, &decoded_address, &decoded_cmd) == ESP_OK) {
-                ESP_LOGI(TAG, "IR SIGNAL DECODED. Command: 0x%02X, Address: 0x%02X", decoded_cmd, decoded_address);
-            } else {
-                ESP_LOGW(TAG, "IR SIGNAL DECODE FAILED");
+            if (decode_len > 50) {
+                uint8_t addr, cmd;
+                if (ir_decode((uint32_t*)decode_buffer_add, decode_len, &addr, &cmd) == ESP_OK) {
+                    ESP_LOGI(TAG, "IR Signal Received! Address: 0x%02X, Command 0x%02X", addr, cmd);
+                } else {
+                    ESP_LOGE(TAG, "IR SIGNAL RECEIVED BUT FAILED TO DECODE");
+                }
+            } else if (decode_len > 0 && decode_len < 10) {
+                ESP_LOGI(TAG, "Repeat Code Detected");
             }
         }
     }
