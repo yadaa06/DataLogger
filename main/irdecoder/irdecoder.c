@@ -1,5 +1,6 @@
 // irdecoder.c
 
+#include <string.h>
 #include "irdecoder.h"
 #include "esp_log.h"
 #include "esp_timer.h"
@@ -33,6 +34,8 @@ static void IRAM_ATTR gpio_isr_handler(void* arg) {
         if (currIndex > 50) {
             BaseType_t higher_priority_task = pdFALSE;
             xSemaphoreGiveFromISR(xSignaler, &higher_priority_task);
+        } else {
+            currIndex = 0;
         }
     } else {
         if (currIndex < IR_TIMES_SIZE) {
@@ -131,23 +134,21 @@ void ir_decoder_task(void* pvParameters) {
 
     while (1) {
         if (xSemaphoreTake(xSignaler, portMAX_DELAY) == pdTRUE) {
-            vTaskDelay(pdMS_TO_TICKS(500));
-            uint32_t local_times[IR_TIMES_SIZE];
-            uint8_t local_index;
+            gpio_isr_handler_remove(IR_PIN);
 
-            portDISABLE_INTERRUPTS();
-            local_index = currIndex;
+            uint32_t local_times[IR_TIMES_SIZE];
+            uint8_t local_index = currIndex;
+
+            memcpy(local_times, (void*)ir_times, local_index * sizeof(local_times[0]));
             currIndex = 0;
             last_time = 0;
+            gpio_isr_handler_add(IR_PIN, gpio_isr_handler, NULL);
 
             for (int i = 0; i < local_index; i++) {
-                local_times[i] = ir_times[i];
-                ir_times[i] = 0;
+                ESP_LOGI(TAG, "%ld", local_times[i]);
             }
-            portENABLE_INTERRUPTS();
 
             uint8_t decoded_address, decoded_cmd;
-
             if (ir_decode(local_times, local_index, &decoded_address, &decoded_cmd) == ESP_OK) {
                 ESP_LOGI(TAG, "IR SIGNAL DECODED. Command: 0x%02X, Address: 0x%02X", decoded_cmd, decoded_address);
             } else {
