@@ -37,6 +37,9 @@ static void IRAM_ATTR gpio_isr_handler(void* arg) {
     } else {
         if (currIndex < IR_TIMES_SIZE) {
             ir_times[currIndex++] = pulse_length;
+        } else {
+            last_time = 0;
+            currIndex = 0;
         }
     }
 }
