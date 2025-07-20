@@ -1,7 +1,6 @@
 // irdecoder.c
 
 #include <string.h>
-#include <math.h>
 #include "irdecoder.h"
 #include "esp_log.h"
 #include "esp_timer.h"
@@ -16,10 +15,11 @@ static uint64_t last_time = 0;
 static volatile uint8_t active_idx = 0;
 static volatile uint32_t ir_buffer_A[IR_TIMES_SIZE];
 static volatile uint32_t ir_buffer_B[IR_TIMES_SIZE];
-static volatile uint32_t *active_buffer_add = ir_buffer_A;
-static volatile uint32_t *decode_buffer_add = ir_buffer_B;
+static volatile uint32_t *a_active_buffer = ir_buffer_A;
+static volatile uint32_t *a_decode_buffer = ir_buffer_B;
 static volatile uint8_t decode_len = 0;
 static SemaphoreHandle_t xSignaler = NULL;
+static volatile uint64_t last_pulse_time = 0;
 
 gptimer_handle_t GPtimer;
 
@@ -34,13 +34,15 @@ static void IRAM_ATTR gpio_isr_handler(void* arg) {
 
     pulse_length = curr_time - last_time;
     last_time = curr_time;
+    last_pulse_time = esp_timer_get_time();
 
     if (pulse_length > 15000) {
         if (active_idx > 0) {
+            volatile uint32_t *tmp = a_active_buffer;
+            a_active_buffer = a_decode_buffer;
+            a_decode_buffer = tmp;
+
             decode_len = active_idx;
-            volatile uint32_t *tmp = active_buffer_add;
-            active_buffer_add = decode_buffer_add;
-            decode_buffer_add = tmp;
 
             BaseType_t higher_priority_task = pdFALSE;
             xSemaphoreGiveFromISR(xSignaler, &higher_priority_task);
@@ -48,7 +50,7 @@ static void IRAM_ATTR gpio_isr_handler(void* arg) {
         active_idx = 0;
     } else {
         if (active_idx < IR_TIMES_SIZE) {
-            active_buffer_add[active_idx++] = pulse_length;
+            a_active_buffer[active_idx++] = pulse_length;
         } else {
             last_time = 0;
             active_idx = 0;
@@ -92,15 +94,15 @@ static void ir_decode(ir_result_t* result) {
     result->command = 0;
 
     if (decode_len > 50) {
-        if (!IR_MATCH(decode_buffer_add[0], NEC_START_PULSE) || !IR_MATCH(decode_buffer_add[1], NEC_START_SPACE)) {
+        if (!IR_MATCH(a_decode_buffer[0], NEC_START_PULSE) || !IR_MATCH(a_decode_buffer[1], NEC_START_SPACE)) {
             ESP_LOGE(TAG, "IR SIGNAL doesn't follow NEC start protocol");
             return;
         }
 
         uint32_t decoded_data = 0;
         for (int i = 0; i < 32; i++) {
-            uint32_t pulse = decode_buffer_add[i * 2 + 2];
-            uint32_t space = decode_buffer_add[i * 2 + 3];
+            uint32_t pulse = a_decode_buffer[i * 2 + 2];
+            uint32_t space = a_decode_buffer[i * 2 + 3];
 
             if (!IR_MATCH(pulse, NEC_BIT_PULSE)) {
                 ESP_LOGE(TAG, "IR bit not a valid bit pulse");
@@ -146,7 +148,7 @@ void ir_decoder_task(void* pvParameters) {
     decoder_task_init();
 
     while (1) {
-        if (xSemaphoreTake(xSignaler, portMAX_DELAY) == pdTRUE) {
+        if (xSemaphoreTake(xSignaler, pdMS_TO_TICKS(10)) == pdTRUE) {
                 ir_result_t decoded_signal;
                 ir_decode(&decoded_signal);
 
@@ -164,6 +166,35 @@ void ir_decoder_task(void* pvParameters) {
                     ESP_LOGW(TAG, "Invalid Frame Detected");
                     break;
                 }
+        } else {
+            uint64_t now = esp_timer_get_time();
+            if (active_idx > 0 && (now - last_pulse_time > TIMEOUT_US)) {
+            // Force buffer swap
+            volatile uint32_t *tmp = a_active_buffer;
+            a_active_buffer = a_decode_buffer;
+            a_decode_buffer = tmp;
+
+            decode_len = active_idx;
+            active_idx = 0;
+            last_time = 0;
+
+            ir_result_t decoded_signal;
+            ir_decode(&decoded_signal);
+            switch (decoded_signal.type) {
+                case IR_FRAME_TYPE_DATA:
+                    ESP_LOGI(TAG, "Data Frame! Address: 0x%02X, Command: 0x%02X",
+                             decoded_signal.address, decoded_signal.command);
+                    break;
+
+                case IR_FRAME_TYPE_REPEAT:
+                    ESP_LOGI(TAG, "Repeat Code Detected");
+                    break;
+
+                case IR_FRAME_TYPE_INVALID:
+                    ESP_LOGW(TAG, "Invalid Frame Detected");
+                    break;
+                }
+        }
         }
     }
 }

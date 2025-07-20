@@ -6,6 +6,8 @@
 #define IR_PIN GPIO_NUM_14
 #define IR_TIMES_SIZE 128
 
+#define TIMEOUT_US 50000
+
 #define NEC_START_PULSE 9000
 #define NEC_START_SPACE 4500
 #define NEC_BIT_PULSE 560 
