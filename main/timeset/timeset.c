@@ -1,9 +1,9 @@
 // timeset.c
 
 #include "timeset.h"
-#include <time.h>
 #include "esp_log.h"
 #include "esp_sntp.h"
+#include <time.h>
 
 static const char* TAG = "TIMESET_DRIVER";
 
@@ -15,7 +15,7 @@ static void _initialize_sntp() {
 }
 
 static void _wait_for_time_sync() {
-    time_t now = 0;
+    time_t now         = 0;
     struct tm timeinfo = {0};
 
     int retry = 0;

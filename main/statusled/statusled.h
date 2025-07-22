@@ -26,10 +26,8 @@ typedef enum {
     STATUS_LED_STATE_ERROR
 } status_led_state_t;
 
-
 void status_led_set_state(status_led_state_t state);
 void error_blink_task(void* pvParameters);
 esp_err_t status_led_init();
-
 
 #endif

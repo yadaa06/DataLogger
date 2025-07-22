@@ -3,13 +3,13 @@
 #ifndef LCD_I2C_H
 #define LCD_I2C_H
 
-#include "esp_err.h"
 #include "driver/i2c_master.h"
+#include "esp_err.h"
 
 #define I2C_MASTER_SDA_IO           GPIO_NUM_21
 #define I2C_MASTER_SCL_IO           GPIO_NUM_22
-
 #define I2C_MASTER_NUM              I2C_NUM_0
+
 #define I2C_MASTER_FREQ_HZ          100000
 #define I2C_MASTER_TX_BUF_DISABLE   0
 #define I2C_MASTER_RX_BUF_DISABLE   0
@@ -59,9 +59,9 @@
 
 typedef struct {
     i2c_master_dev_handle_t i2c_dev_handle;
-    uint8_t     cols;
-    uint8_t     rows;
-    uint8_t     backlight_state;
+    uint8_t cols;
+    uint8_t rows;
+    uint8_t backlight_state;
 } lcd_i2c_handle_t;
 
 lcd_i2c_handle_t* lcd_i2c_init(void);
@@ -71,6 +71,6 @@ esp_err_t lcd_i2c_home(lcd_i2c_handle_t* lcd);
 esp_err_t lcd_i2c_clear(lcd_i2c_handle_t* lcd);
 esp_err_t lcd_i2c_set_cursor(lcd_i2c_handle_t* lcd, uint8_t col, uint8_t row);
 esp_err_t lcd_i2c_write_char(lcd_i2c_handle_t* lcd, char c);
-esp_err_t lcd_i2c_write_string(lcd_i2c_handle_t* lcd, const char *str, ...);
+esp_err_t lcd_i2c_write_string(lcd_i2c_handle_t* lcd, const char* str, ...);
 
 #endif

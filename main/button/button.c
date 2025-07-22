@@ -1,15 +1,17 @@
 // button.c
 
 #include "button.h"
+#include "dht11_task.h"
+#include "driver/gpio.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
-#include "driver/gpio.h"
 #include "lcd_task.h"
-#include "dht11_task.h"
 
 static const char* TAG = "BUTTON_DRIVER";
+
 static volatile TickType_t last_isr_tick = 0;
+
 static SemaphoreHandle_t xSignaler = NULL;
 
 static void IRAM_ATTR gpio_isr_handler(void* arg) {
@@ -17,10 +19,11 @@ static void IRAM_ATTR gpio_isr_handler(void* arg) {
 
     if (current_tick - last_isr_tick > pdMS_TO_TICKS(DEBOUNCE_TIME_MS)) {
         last_isr_tick = current_tick;
+
         BaseType_t higher_priority_task = pdFALSE;
         xSemaphoreGiveFromISR(xSignaler, &higher_priority_task);
 
-        if(higher_priority_task == pdTRUE) {
+        if (higher_priority_task == pdTRUE) {
             portYIELD_FROM_ISR();
         }
     }

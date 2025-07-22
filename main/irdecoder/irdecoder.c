@@ -1,25 +1,31 @@
 // irdecoder.c
 
-#include <string.h>
 #include "irdecoder.h"
+#include "driver/gpio.h"
+#include "driver/gptimer.h"
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "rom/ets_sys.h"
-#include "driver/gptimer.h"
-#include "driver/gpio.h"
+#include <string.h>
 
 static const char* TAG = "IR_DRIVER";
+
 static uint64_t last_time = 0;
+
 static volatile uint8_t active_idx = 0;
+static volatile uint8_t decode_len = 0;
+
 static volatile uint32_t ir_buffer_A[IR_TIMES_SIZE];
 static volatile uint32_t ir_buffer_B[IR_TIMES_SIZE];
-static volatile uint32_t *a_active_buffer = ir_buffer_A;
-static volatile uint32_t *a_decode_buffer = ir_buffer_B;
-static volatile uint8_t decode_len = 0;
-static SemaphoreHandle_t xSignaler = NULL;
+
+static volatile uint32_t* a_active_buffer = ir_buffer_A;
+static volatile uint32_t* a_decode_buffer = ir_buffer_B;
+
+static SemaphoreHandle_t xSignaler    = NULL;
 static TimerHandle_t ir_timeout_timer = NULL;
+
 gptimer_handle_t GPtimer;
 
 static void IRAM_ATTR gpio_isr_handler(void* arg) {
@@ -32,18 +38,19 @@ static void IRAM_ATTR gpio_isr_handler(void* arg) {
     }
 
     pulse_length = curr_time - last_time;
+
     BaseType_t higher_priority_task = pdFALSE;
     xTimerResetFromISR(ir_timeout_timer, &higher_priority_task);
-    
+
     last_time = curr_time;
 
     if (pulse_length > 15000) {
         if (active_idx > 0) {
-            volatile uint32_t *tmp = a_active_buffer;
+            volatile uint32_t* tmp = a_active_buffer;
+
             a_active_buffer = a_decode_buffer;
             a_decode_buffer = tmp;
-
-            decode_len = active_idx;
+            decode_len      = active_idx;
 
             xSemaphoreGiveFromISR(xSignaler, &higher_priority_task);
         }
@@ -52,20 +59,21 @@ static void IRAM_ATTR gpio_isr_handler(void* arg) {
         if (active_idx < IR_TIMES_SIZE) {
             a_active_buffer[active_idx++] = pulse_length;
         } else {
-            last_time = 0;
+            last_time  = 0;
             active_idx = 0;
         }
     }
 }
 
 static void ir_timeout_callback(TimerHandle_t xTimer) {
-    volatile uint32_t *tmp = a_active_buffer;
+    volatile uint32_t* tmp = a_active_buffer;
+
     a_active_buffer = a_decode_buffer;
     a_decode_buffer = tmp;
 
     decode_len = active_idx;
     active_idx = 0;
-    last_time = 0;
+    last_time  = 0;
 
     BaseType_t higher_priority_task = pdFALSE;
     xSemaphoreGiveFromISR(xSignaler, &higher_priority_task);
@@ -75,12 +83,11 @@ static void decoder_task_init() {
     gpio_reset_pin(IR_PIN);
     gpio_set_direction(IR_PIN, GPIO_MODE_INPUT);
     gpio_set_intr_type(IR_PIN, GPIO_INTR_ANYEDGE);
-    
+
     gptimer_config_t timer_config = {
-        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
-        .direction = GPTIMER_COUNT_UP,
-        .resolution_hz = 1 * 1000 * 1000
-    };
+        .clk_src       = GPTIMER_CLK_SRC_DEFAULT,
+        .direction     = GPTIMER_COUNT_UP,
+        .resolution_hz = 1 * 1000 * 1000};
 
     xSignaler = xSemaphoreCreateBinary();
     if (xSignaler == NULL) {
@@ -89,7 +96,7 @@ static void decoder_task_init() {
     }
 
     ESP_ERROR_CHECK(gptimer_new_timer(&timer_config, &GPtimer));
-    
+
     esp_err_t isr_service_result = gpio_install_isr_service(0);
     if (isr_service_result != ESP_OK && isr_service_result != ESP_ERR_INVALID_STATE) {
         ESP_LOGE(TAG, "FAILED TO INSTALL ISR SERVICE: %s", esp_err_to_name(isr_service_result));
@@ -102,8 +109,7 @@ static void decoder_task_init() {
         pdMS_TO_TICKS(TIMEOUT_US / 1000),
         pdFALSE,
         NULL,
-        ir_timeout_callback
-    );
+        ir_timeout_callback);
 
     if (ir_timeout_timer == NULL) {
         ESP_LOGE(TAG, "FAILED TO CREATE SOFTWARE TIMER");
@@ -114,7 +120,8 @@ static void decoder_task_init() {
 }
 
 static void ir_decode(ir_result_t* result) {
-    result->type    = IR_FRAME_TYPE_INVALID;
+    result->type = IR_FRAME_TYPE_INVALID;
+
     result->address = 0;
     result->command = 0;
 
@@ -155,9 +162,11 @@ static void ir_decode(ir_result_t* result) {
             return;
         }
 
-        result->type    = IR_FRAME_TYPE_DATA;
+        result->type = IR_FRAME_TYPE_DATA;
+
         result->address = addr;
         result->command = cmd;
+
         return;
     }
 
@@ -174,23 +183,23 @@ void ir_decoder_task(void* pvParameters) {
 
     while (1) {
         if (xSemaphoreTake(xSignaler, portMAX_DELAY) == pdTRUE) {
-                ir_result_t decoded_signal;
-                ir_decode(&decoded_signal);
+            ir_result_t decoded_signal;
+            ir_decode(&decoded_signal);
 
-                switch (decoded_signal.type) {
-                case IR_FRAME_TYPE_DATA:
-                    ESP_LOGI(TAG, "Data Frame! Address: 0x%02X, Command: 0x%02X",
-                             decoded_signal.address, decoded_signal.command);
-                    break;
+            switch (decoded_signal.type) {
+            case IR_FRAME_TYPE_DATA:
+                ESP_LOGI(TAG, "Data Frame! Address: 0x%02X, Command: 0x%02X",
+                         decoded_signal.address, decoded_signal.command);
+                break;
 
-                case IR_FRAME_TYPE_REPEAT:
-                    ESP_LOGI(TAG, "Repeat Code Detected");
-                    break;
+            case IR_FRAME_TYPE_REPEAT:
+                ESP_LOGI(TAG, "Repeat Code Detected");
+                break;
 
-                case IR_FRAME_TYPE_INVALID:
-                    ESP_LOGW(TAG, "Invalid Frame Detected");
-                    break;
-                }
+            case IR_FRAME_TYPE_INVALID:
+                ESP_LOGW(TAG, "Invalid Frame Detected");
+                break;
+            }
         }
     }
 }

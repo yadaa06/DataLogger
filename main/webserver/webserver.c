@@ -1,33 +1,34 @@
 // webserver.c
 
 #include "webserver.h"
-#include <stdio.h>
-#include <math.h>
-#include <string.h>
-#include "esp_log.h"
+#include "dht11_task.h"
 #include "esp_err.h"
 #include "esp_http_server.h"
+#include "esp_log.h"
 #include <freertos/task.h>
-#include "dht11_task.h"
+#include <math.h>
+#include <stdio.h>
+#include <string.h>
 
 static const char* TAG = "WEB_SERVER";
 extern const uint8_t _binary_index_html_start[] asm("_binary_index_html_start");
-extern const uint8_t _binary_index_html_end[]   asm("_binary_index_html_end");
-extern const uint8_t _binary_style_css_start[]  asm("_binary_style_css_start");
-extern const uint8_t _binary_style_css_end[]    asm("_binary_style_css_end");
-extern const uint8_t _binary_script_js_start[]  asm("_binary_script_js_start");
-extern const uint8_t _binary_script_js_end[]    asm("_binary_script_js_end");
+extern const uint8_t _binary_index_html_end[] asm("_binary_index_html_end");
+extern const uint8_t _binary_style_css_start[] asm("_binary_style_css_start");
+extern const uint8_t _binary_style_css_end[] asm("_binary_style_css_end");
+extern const uint8_t _binary_script_js_start[] asm("_binary_script_js_start");
+extern const uint8_t _binary_script_js_end[] asm("_binary_script_js_end");
 
-static esp_err_t _dht_history_get_handler(httpd_req_t *req) {
-    dht11_reading_t *history_buffer = malloc(sizeof(dht11_reading_t) * DHT_HISTORY_SIZE);
-    char *json_response = malloc(2048);
+static esp_err_t _dht_history_get_handler(httpd_req_t* req) {
+    dht11_reading_t* history_buffer = malloc(sizeof(dht11_reading_t) * DHT_HISTORY_SIZE);
+
+    char* json_response             = malloc(2048);
 
     if (history_buffer == NULL || json_response == NULL) {
         ESP_LOGE(TAG, "Failed to allocate memory for history handler!");
         if (history_buffer) {
             free(history_buffer);
         }
-        if (json_response) { 
+        if (json_response) {
             free(json_response);
         }
         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Memory allocation failed");
@@ -37,7 +38,7 @@ static esp_err_t _dht_history_get_handler(httpd_req_t *req) {
     uint32_t number_of_readings = 0;
     dht11_get_history(history_buffer, &number_of_readings);
 
-    char* p = json_response;
+    char* p         = json_response;
     const char* end = json_response + 2048;
     int len;
 
@@ -46,56 +47,55 @@ static esp_err_t _dht_history_get_handler(httpd_req_t *req) {
     len = snprintf(p, end - p, "{\"history\":[");
     if (len < 0 || len >= (end - p)) {
         ESP_LOGE(TAG, "snprintf failed during JSON creation");
-        goto cleanup; 
+        goto cleanup;
     }
     p += len;
 
     for (int i = 0; i < number_of_readings; i++) {
         len = snprintf(p, end - p, "{\"temperature\":%.2f,\"humidity\":%.1f,\"timestamp\":%lld}",
-               history_buffer[i].temperature,
-               history_buffer[i].humidity,
-               (long long)history_buffer[i].timestamp);
+                       history_buffer[i].temperature,
+                       history_buffer[i].humidity,
+                       (long long)history_buffer[i].timestamp);
 
-        if (len < 0 || len >= (end - p)) { 
-            goto cleanup; 
+        if (len < 0 || len >= (end - p)) {
+            goto cleanup;
         }
         p += len;
 
         if (i < number_of_readings - 1) {
-            if ((end - p) < 2) { 
-                goto cleanup; 
+            if ((end - p) < 2) {
+                goto cleanup;
             }
             *p++ = ',';
         }
     }
 
-    if ((end - p) < 3) { 
-        goto cleanup; 
+    if ((end - p) < 3) {
+        goto cleanup;
     }
     *p++ = ']';
     *p++ = '}';
-    *p = '\0';
+    *p   = '\0';
 
     httpd_resp_set_type(req, "application/json");
     httpd_resp_send(req, json_response, strlen(json_response));
     ESP_LOGI(TAG, "Sent history data.");
 
-    cleanup:
+cleanup:
     free(history_buffer);
     free(json_response);
 
     return ESP_OK;
 }
 
-
-static esp_err_t _dht_data_get_handler(httpd_req_t *req) { 
+static esp_err_t _dht_data_get_handler(httpd_req_t* req) {
     int len;
     dht11_notify_read();
 
     vTaskDelay(pdMS_TO_TICKS(500));
 
     float temperature = dht11_get_temperature();
-    float humidity = dht11_get_humidity();
+    float humidity    = dht11_get_humidity();
 
     char json_response[64];
     if (isnan(temperature) || isnan(humidity)) {
@@ -116,8 +116,7 @@ static esp_err_t _dht_data_get_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
-
-static esp_err_t _root_get_handler(httpd_req_t *req) {
+static esp_err_t _root_get_handler(httpd_req_t* req) {
     ESP_LOGI(TAG, "Serving root page (/)");
 
     httpd_resp_set_type(req, "text/html");
@@ -126,7 +125,7 @@ static esp_err_t _root_get_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
-static esp_err_t _style_css_get_handler(httpd_req_t *req) {
+static esp_err_t _style_css_get_handler(httpd_req_t* req) {
     ESP_LOGI(TAG, "Serving style.css");
 
     httpd_resp_set_type(req, "text/css");
@@ -135,7 +134,7 @@ static esp_err_t _style_css_get_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
-static esp_err_t _script_js_get_handler(httpd_req_t *req) {
+static esp_err_t _script_js_get_handler(httpd_req_t* req) {
     ESP_LOGI(TAG, "Serving script.js");
 
     httpd_resp_set_type(req, "application/javascript");
@@ -145,32 +144,32 @@ static esp_err_t _script_js_get_handler(httpd_req_t *req) {
 }
 
 httpd_uri_t root_uri = {
-    .uri = "/",
-    .method = HTTP_GET,
+    .uri     = "/",
+    .method  = HTTP_GET,
     .handler = _root_get_handler,
 };
 
 httpd_uri_t style_css_uri = {
-    .uri = "/style.css",
-    .method = HTTP_GET,
+    .uri     = "/style.css",
+    .method  = HTTP_GET,
     .handler = _style_css_get_handler,
 };
 
 httpd_uri_t script_js_uri = {
-    .uri = "/script.js",
-    .method = HTTP_GET,
+    .uri     = "/script.js",
+    .method  = HTTP_GET,
     .handler = _script_js_get_handler,
 };
 
 httpd_uri_t dht_data_uri = {
-    .uri = "/dht_data",
-    .method = HTTP_GET,
+    .uri     = "/dht_data",
+    .method  = HTTP_GET,
     .handler = _dht_data_get_handler,
 };
 
 httpd_uri_t dht_history_uri = {
-    .uri = "/dht_history",
-    .method = HTTP_GET,
+    .uri     = "/dht_history",
+    .method  = HTTP_GET,
     .handler = _dht_history_get_handler,
 };
 
@@ -185,6 +184,6 @@ httpd_handle_t start_webserver() {
     ESP_ERROR_CHECK(httpd_register_uri_handler(server, &script_js_uri));
     ESP_ERROR_CHECK(httpd_register_uri_handler(server, &dht_data_uri));
     ESP_ERROR_CHECK(httpd_register_uri_handler(server, &dht_history_uri));
-    
+
     return server;
 }
