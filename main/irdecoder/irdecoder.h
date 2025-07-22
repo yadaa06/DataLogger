@@ -6,14 +6,14 @@
 #define IR_PIN GPIO_NUM_14
 #define IR_TIMES_SIZE 128
 
-#define TIMEOUT_US 50000
+#define TIMEOUT_US 100000
 
 #define NEC_START_PULSE 9000
 #define NEC_START_SPACE 4500
 #define NEC_BIT_PULSE 560 
 #define NEC_ZERO_SPACE 560 
 #define NEC_ONE_SPACE 1690 
-#define NEC_TOLERANCE_PERCENT 30 
+#define NEC_TOLERANCE_PERCENT 30
 
 #define IR_MATCH(value, target) \
     ((value) >= ((target) - ((target) * NEC_TOLERANCE_PERCENT / 100)) && \

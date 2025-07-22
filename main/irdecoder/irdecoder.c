@@ -19,8 +19,7 @@ static volatile uint32_t *a_active_buffer = ir_buffer_A;
 static volatile uint32_t *a_decode_buffer = ir_buffer_B;
 static volatile uint8_t decode_len = 0;
 static SemaphoreHandle_t xSignaler = NULL;
-static volatile uint64_t last_pulse_time = 0;
-
+static TimerHandle_t ir_timeout_timer = NULL;
 gptimer_handle_t GPtimer;
 
 static void IRAM_ATTR gpio_isr_handler(void* arg) {
@@ -33,8 +32,10 @@ static void IRAM_ATTR gpio_isr_handler(void* arg) {
     }
 
     pulse_length = curr_time - last_time;
+    BaseType_t higher_priority_task = pdFALSE;
+    xTimerResetFromISR(ir_timeout_timer, &higher_priority_task);
+    
     last_time = curr_time;
-    last_pulse_time = esp_timer_get_time();
 
     if (pulse_length > 15000) {
         if (active_idx > 0) {
@@ -44,7 +45,6 @@ static void IRAM_ATTR gpio_isr_handler(void* arg) {
 
             decode_len = active_idx;
 
-            BaseType_t higher_priority_task = pdFALSE;
             xSemaphoreGiveFromISR(xSignaler, &higher_priority_task);
         }
         active_idx = 0;
@@ -56,6 +56,19 @@ static void IRAM_ATTR gpio_isr_handler(void* arg) {
             active_idx = 0;
         }
     }
+}
+
+static void ir_timeout_callback(TimerHandle_t xTimer) {
+    volatile uint32_t *tmp = a_active_buffer;
+    a_active_buffer = a_decode_buffer;
+    a_decode_buffer = tmp;
+
+    decode_len = active_idx;
+    active_idx = 0;
+    last_time = 0;
+
+    BaseType_t higher_priority_task = pdFALSE;
+    xSemaphoreGiveFromISR(xSignaler, &higher_priority_task);
 }
 
 static void decoder_task_init() {
@@ -79,10 +92,22 @@ static void decoder_task_init() {
     
     esp_err_t isr_service_result = gpio_install_isr_service(0);
     if (isr_service_result != ESP_OK && isr_service_result != ESP_ERR_INVALID_STATE) {
-        ESP_LOGE(TAG, "Failed to install ISR service: %s", esp_err_to_name(isr_service_result));
+        ESP_LOGE(TAG, "FAILED TO INSTALL ISR SERVICE: %s", esp_err_to_name(isr_service_result));
         return;
     }
     ESP_ERROR_CHECK(gpio_isr_handler_add(IR_PIN, gpio_isr_handler, NULL));
+
+    ir_timeout_timer = xTimerCreate(
+        "IRTimeout",
+        pdMS_TO_TICKS(TIMEOUT_US / 1000),
+        pdFALSE,
+        NULL,
+        ir_timeout_callback
+    );
+
+    if (ir_timeout_timer == NULL) {
+        ESP_LOGE(TAG, "FAILED TO CREATE SOFTWARE TIMER");
+    }
 
     gptimer_enable(GPtimer);
     gptimer_start(GPtimer);
@@ -95,7 +120,7 @@ static void ir_decode(ir_result_t* result) {
 
     if (decode_len > 50) {
         if (!IR_MATCH(a_decode_buffer[0], NEC_START_PULSE) || !IR_MATCH(a_decode_buffer[1], NEC_START_SPACE)) {
-            ESP_LOGE(TAG, "IR SIGNAL doesn't follow NEC start protocol");
+            ESP_LOGE(TAG, "IR SIGNAL DOESN'T FOLLOW NEC START PROTOCOL");
             return;
         }
 
@@ -105,7 +130,7 @@ static void ir_decode(ir_result_t* result) {
             uint32_t space = a_decode_buffer[i * 2 + 3];
 
             if (!IR_MATCH(pulse, NEC_BIT_PULSE)) {
-                ESP_LOGE(TAG, "IR bit not a valid bit pulse");
+                ESP_LOGE(TAG, "IR BIT NOT A VALID BIT PULSE");
                 return;
             }
 
@@ -115,7 +140,7 @@ static void ir_decode(ir_result_t* result) {
             } else if (IR_MATCH(space, NEC_ZERO_SPACE)) {
                 decoded_data |= 0;
             } else {
-                ESP_LOGE(TAG, "IR bit not a valid bit space");
+                ESP_LOGE(TAG, "IR BIT NOT A VALID BIT SPACE");
                 return;
             }
         }
@@ -126,7 +151,7 @@ static void ir_decode(ir_result_t* result) {
         uint8_t inv_cmd  = (decoded_data) & 0xFF;
 
         if ((addr ^ inv_addr) != 0xFF || (cmd ^ inv_cmd) != 0xFF) {
-            ESP_LOGE(TAG, "Checksum Failed");
+            ESP_LOGE(TAG, "CHECKSUM FAILED");
             return;
         }
 
@@ -148,7 +173,7 @@ void ir_decoder_task(void* pvParameters) {
     decoder_task_init();
 
     while (1) {
-        if (xSemaphoreTake(xSignaler, pdMS_TO_TICKS(10)) == pdTRUE) {
+        if (xSemaphoreTake(xSignaler, portMAX_DELAY) == pdTRUE) {
                 ir_result_t decoded_signal;
                 ir_decode(&decoded_signal);
 
@@ -166,35 +191,6 @@ void ir_decoder_task(void* pvParameters) {
                     ESP_LOGW(TAG, "Invalid Frame Detected");
                     break;
                 }
-        } else {
-            uint64_t now = esp_timer_get_time();
-            if (active_idx > 0 && (now - last_pulse_time > TIMEOUT_US)) {
-            // Force buffer swap
-            volatile uint32_t *tmp = a_active_buffer;
-            a_active_buffer = a_decode_buffer;
-            a_decode_buffer = tmp;
-
-            decode_len = active_idx;
-            active_idx = 0;
-            last_time = 0;
-
-            ir_result_t decoded_signal;
-            ir_decode(&decoded_signal);
-            switch (decoded_signal.type) {
-                case IR_FRAME_TYPE_DATA:
-                    ESP_LOGI(TAG, "Data Frame! Address: 0x%02X, Command: 0x%02X",
-                             decoded_signal.address, decoded_signal.command);
-                    break;
-
-                case IR_FRAME_TYPE_REPEAT:
-                    ESP_LOGI(TAG, "Repeat Code Detected");
-                    break;
-
-                case IR_FRAME_TYPE_INVALID:
-                    ESP_LOGW(TAG, "Invalid Frame Detected");
-                    break;
-                }
-        }
         }
     }
 }
