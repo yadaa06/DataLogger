@@ -3,6 +3,8 @@
 #ifndef IR_DECODER_H
 #define IR_DECODER_H
 
+#include <stdint.h>
+
 #define IR_PIN GPIO_NUM_14
 #define IR_TIMES_SIZE 128
 
