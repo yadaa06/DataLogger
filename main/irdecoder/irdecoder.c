@@ -2,6 +2,7 @@
 
 #include "irdecoder.h"
 #include "dht11_task.h"
+#include "lcd_task.h"
 #include "driver/gpio.h"
 #include "driver/gptimer.h"
 #include "esp_log.h"
@@ -177,7 +178,7 @@ static void ir_decode(ir_result_t* result) {
     }
 }
 
-static void decodeKeyValue(ir_result_t* ir_data) {
+static void decode_key_value(ir_result_t* ir_data) {
     switch (ir_data->command) {
     case BUTTON_0:
         ir_data->button = BUTTON_0;
@@ -311,10 +312,13 @@ void ir_decoder_task(void* pvParameters) {
 
             switch (decoded_signal.type) {
             case IR_FRAME_TYPE_DATA:
-                ESP_LOGI(TAG, "Data Frame! Address: 0x%02X, Command: 0x%02X",
-                         decoded_signal.address, decoded_signal.command);
-                decodeKeyValue(&decoded_signal);
+                decode_key_value(&decoded_signal);
                 ESP_LOGI(TAG, "Command Received: %s", get_button_name(decoded_signal.button));
+                if (decoded_signal.button == BUTTON_FORWARD) {
+                    dht11_notify_read();
+                } else if (decoded_signal.button == BUTTON_CYCLE) {
+                    lcd_cycle_mode();
+                }
                 break;
 
             case IR_FRAME_TYPE_REPEAT:
