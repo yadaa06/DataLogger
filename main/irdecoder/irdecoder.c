@@ -2,13 +2,13 @@
 
 #include "irdecoder.h"
 #include "dht11_task.h"
-#include "lcd_task.h"
 #include "driver/gpio.h"
 #include "driver/gptimer.h"
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#include "lcd_task.h"
 #include "rom/ets_sys.h"
 #include <string.h>
 
