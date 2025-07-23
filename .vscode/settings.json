@@ -5,7 +5,7 @@
   "idf.openOcdConfigs": [
     "board/esp-wroom-32.cfg"
   ],
-  "idf.port": "/dev/tty.usbserial-10",
+  "idf.port": "/dev/tty.usbserial-210",
   "idf.toolsPath": "/Users/akhilyada/.espressif",
   "idf.customExtraVars": {
     "IDF_TARGET": "esp32"

@@ -1,6 +1,7 @@
 // irdecoder.c
 
 #include "irdecoder.h"
+#include "dht11_task.h"
 #include "driver/gpio.h"
 #include "driver/gptimer.h"
 #include "esp_log.h"
@@ -176,6 +177,128 @@ static void ir_decode(ir_result_t* result) {
     }
 }
 
+static void decodeKeyValue(ir_result_t* ir_data) {
+    switch (ir_data->command) {
+    case BUTTON_0:
+        ir_data->button = BUTTON_0;
+        break;
+    case BUTTON_1:
+        ir_data->button = BUTTON_1;
+        break;
+    case BUTTON_2:
+        ir_data->button = BUTTON_2;
+        break;
+    case BUTTON_3:
+        ir_data->button = BUTTON_3;
+        break;
+    case BUTTON_4:
+        ir_data->button = BUTTON_4;
+        break;
+    case BUTTON_5:
+        ir_data->button = BUTTON_5;
+        break;
+    case BUTTON_6:
+        ir_data->button = BUTTON_6;
+        break;
+    case BUTTON_7:
+        ir_data->button = BUTTON_7;
+        break;
+    case BUTTON_8:
+        ir_data->button = BUTTON_8;
+        break;
+    case BUTTON_9:
+        ir_data->button = BUTTON_9;
+        break;
+    case BUTTON_PLUS:
+        ir_data->button = BUTTON_PLUS;
+        break;
+    case BUTTON_MINUS:
+        ir_data->button = BUTTON_MINUS;
+        break;
+    case BUTTON_EQ:
+        ir_data->button = BUTTON_EQ;
+        break;
+    case BUTTON_U_SD:
+        ir_data->button = BUTTON_U_SD;
+        break;
+    case BUTTON_CYCLE:
+        ir_data->button = BUTTON_CYCLE;
+        break;
+    case BUTTON_PLAY_PAUSE:
+        ir_data->button = BUTTON_PLAY_PAUSE;
+        break;
+    case BUTTON_BACKWARD:
+        ir_data->button = BUTTON_BACKWARD;
+        break;
+    case BUTTON_FORWARD:
+        ir_data->button = BUTTON_FORWARD;
+        break;
+    case BUTTON_POWER:
+        ir_data->button = BUTTON_POWER;
+        break;
+    case BUTTON_MUTE:
+        ir_data->button = BUTTON_MUTE;
+        break;
+    case BUTTON_MODE:
+        ir_data->button = BUTTON_MODE;
+        break;
+    default:
+        ir_data->button = BUTTON_UNKNOWN_OR_ERROR;
+        break;
+    }
+}
+
+static const char* get_button_name(button_press_t button) {
+    switch (button) {
+    case BUTTON_0:
+        return "0";
+    case BUTTON_1:
+        return "1";
+    case BUTTON_2:
+        return "2";
+    case BUTTON_3:
+        return "3";
+    case BUTTON_4:
+        return "4";
+    case BUTTON_5:
+        return "5";
+    case BUTTON_6:
+        return "6";
+    case BUTTON_7:
+        return "7";
+    case BUTTON_8:
+        return "8";
+    case BUTTON_9:
+        return "9";
+    case BUTTON_PLUS:
+        return "PLUS";
+    case BUTTON_MINUS:
+        return "MINUS";
+    case BUTTON_EQ:
+        return "EQ";
+    case BUTTON_U_SD:
+        return "U/SD";
+    case BUTTON_CYCLE:
+        return "CYCLE";
+    case BUTTON_PLAY_PAUSE:
+        return "PLAY/PAUSE";
+    case BUTTON_BACKWARD:
+        return "BACKWARD";
+    case BUTTON_FORWARD:
+        return "FORWARD";
+    case BUTTON_POWER:
+        return "POWER";
+    case BUTTON_MUTE:
+        return "MUTE";
+    case BUTTON_MODE:
+        return "MODE";
+    case BUTTON_UNKNOWN_OR_ERROR:
+        return "UNKNOWN/ERROR";
+    default:
+        return "UNMAPPED";
+    }
+}
+
 void ir_decoder_task(void* pvParameters) {
     (void)pvParameters;
 
@@ -190,6 +313,8 @@ void ir_decoder_task(void* pvParameters) {
             case IR_FRAME_TYPE_DATA:
                 ESP_LOGI(TAG, "Data Frame! Address: 0x%02X, Command: 0x%02X",
                          decoded_signal.address, decoded_signal.command);
+                decodeKeyValue(&decoded_signal);
+                ESP_LOGI(TAG, "Command Received: %s", get_button_name(decoded_signal.button));
                 break;
 
             case IR_FRAME_TYPE_REPEAT:

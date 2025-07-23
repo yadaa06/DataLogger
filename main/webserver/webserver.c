@@ -21,7 +21,7 @@ extern const uint8_t _binary_script_js_end[] asm("_binary_script_js_end");
 static esp_err_t _dht_history_get_handler(httpd_req_t* req) {
     dht11_reading_t* history_buffer = malloc(sizeof(dht11_reading_t) * DHT_HISTORY_SIZE);
 
-    char* json_response             = malloc(2048);
+    char* json_response = malloc(2048);
 
     if (history_buffer == NULL || json_response == NULL) {
         ESP_LOGE(TAG, "Failed to allocate memory for history handler!");
