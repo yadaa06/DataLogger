@@ -44,7 +44,6 @@ void app_main(void) {
     ESP_LOGI(TAG, "Waiting for WiFi connection...");
 
     status_led_set_state(STATUS_LED_STATE_IN_PROGRESS);
-
     EventBits_t bits = xEventGroupWaitBits(wifi_event_group, WIFI_CONNECTED_BIT | WIFI_FAIL_BIT, pdFALSE, pdFALSE, portMAX_DELAY);
 
     xDHT11Mutex = xSemaphoreCreateMutex();
