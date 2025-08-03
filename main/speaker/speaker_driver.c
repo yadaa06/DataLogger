@@ -1,0 +1,50 @@
+// speaker_driver.c
+
+#include "speaker_driver.h"
+#include "audio_data.h"
+#include "driver/dac_continuous.h"
+#include "esp_err.h"
+#include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include <stdio.h>
+#include <string.h>
+
+#define I2S_PORT I2S_NUM_0
+
+static const char* TAG = "AUDIO_DRIVER";
+dac_continuous_handle_t dac_handle;
+
+void speaker_driver_init(void) {
+    dac_continuous_config_t dac_cfg = {
+        .chan_mask = DAC_CHANNEL_MASK_CH0,
+        .desc_num = 4,
+        .buf_size = 1024,
+        .freq_hz = 8000,
+        .offset = 0,
+        .clk_src = DAC_DIGI_CLK_SRC_APLL,
+    };
+
+    ESP_ERROR_CHECK(dac_continuous_new_channels(&dac_cfg, &dac_handle));
+    ESP_ERROR_CHECK(dac_continuous_enable(dac_handle));
+}
+
+void speaker_driver_play(void) {
+    size_t written = 0;
+    ESP_ERROR_CHECK(dac_continuous_write(dac_handle, audio_fx + 44, audio_fx_len - 44, &written, portMAX_DELAY));
+}
+
+void speaker_driver_deinit(void) {
+    dac_continuous_disable(dac_handle);
+    dac_continuous_del_channels(dac_handle);
+}
+
+void speaker_driver_play_task(void* pvParameters) {
+    (void)pvParameters;
+
+    vTaskDelay(pdMS_TO_TICKS(30000));
+    speaker_driver_init();
+    speaker_driver_play();
+    ESP_LOGI(TAG, "SOUND PLAYED");
+    speaker_driver_deinit();
+}

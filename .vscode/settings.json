@@ -27,6 +27,7 @@
     "task.h": "c",
     "statusled.h": "c",
     "chrono": "cpp",
-    "functional": "cpp"
+    "functional": "cpp",
+    "i2s_std.h": "c"
   }
 }
