@@ -2,6 +2,7 @@
 
 #include "irdecoder.h"
 #include "dht11_task.h"
+#include "speaker_driver.h"
 #include "driver/gpio.h"
 #include "driver/gptimer.h"
 #include "esp_log.h"
@@ -318,6 +319,8 @@ void ir_decoder_task(void* pvParameters) {
                     dht11_notify_read();
                 } else if (decoded_signal.button == BUTTON_CYCLE) {
                     lcd_cycle_mode();
+                } else if (decoded_signal.button == BUTTON_EQ) {
+                    speaker_play_sound();
                 }
                 break;
 
