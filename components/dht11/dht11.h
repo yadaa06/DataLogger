@@ -3,8 +3,8 @@
 #ifndef DHT11_H
 #define DHT11_H
 
-#include "driver/gpio.h" // For GPIO_NUM_X
-#include "esp_err.h"     // For esp_err_t
+#include "driver/gpio.h" 
+#include "esp_err.h"     
 #include <stdbool.h>
 
 // DHT11 Pin Definition

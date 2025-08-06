@@ -9,7 +9,7 @@ project(DataLogger)
 
 find_package(Python3 REQUIRED)
 
-set(SPEAKER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/main/speaker)
+set(SPEAKER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/components/speaker)
 set(AUDIO_WAV ${SPEAKER_DIR}/untitled.wav)
 set(AUDIO_HEADER ${SPEAKER_DIR}/audio_data.h)
 

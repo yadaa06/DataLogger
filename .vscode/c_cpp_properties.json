@@ -6,11 +6,17 @@
       "compileCommands": "${config:idf.buildPath}/compile_commands.json",
       "includePath": [
         "${config:idf.espIdfPath}/components/**",
+        "${workspaceFolder}/components/**",
+        "${workspaceFolder}/build/config",
+        "${workspaceFolder}/main",
         "${workspaceFolder}/**"
       ],
       "browse": {
         "path": [
           "${config:idf.espIdfPath}/components",
+          "${workspaceFolder}/components",
+          "${workspaceFolder}/build/config",
+          "${workspaceFolder}/main",
           "${workspaceFolder}"
         ],
         "limitSymbolsToIncludedHeaders": true

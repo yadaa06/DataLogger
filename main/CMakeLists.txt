@@ -1,3 +1,3 @@
-idf_component_register(SRCS "lcd/lcd_task.c" "dht11/dht11_task.c" "webserver/webserver.c" "button/button.c" "wifi/wifi.c" "lcd/lcd_i2c.c" "dht11/dht11.c" "timeset/timeset.c" "statusled/statusled.c" "irdecoder/irdecoder.c" "speaker/speaker_driver.c" "main.c"
-                    INCLUDE_DIRS "." "dht11" "lcd" "webserver" "wifi" "timeset" "button" "statusled" "irdecoder" "speaker"
+idf_component_register(SRCS "main.c" "webserver/webserver.c"
+                    INCLUDE_DIRS "." "webserver"
                     EMBED_FILES "webserver/index.html" "webserver/style.css" "webserver/script.js")
