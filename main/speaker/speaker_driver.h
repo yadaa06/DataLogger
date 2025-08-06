@@ -6,7 +6,6 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define SAMPLE_RATE 8000
 #define SPEAKER_UL_VALUE 9 
 
 void speaker_driver_init(void);

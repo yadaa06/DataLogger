@@ -32,7 +32,7 @@ void speaker_driver_init(void) {
 
 void speaker_driver_play(void) {
     size_t written = 0;
-    ESP_ERROR_CHECK(dac_continuous_write(dac_handle, audio_fx + 44, audio_fx_len - 44, &written, portMAX_DELAY));
+    ESP_ERROR_CHECK(dac_continuous_write(dac_handle, audio_fx, audio_fx_len, &written, portMAX_DELAY));
 }
 
 void speaker_driver_deinit(void) {
