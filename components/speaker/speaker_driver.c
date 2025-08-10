@@ -16,7 +16,7 @@ static const char* TAG = "AUDIO_DRIVER";
 static TaskHandle_t speaker_task_handle = NULL;
 dac_continuous_handle_t dac_handle;
 
-void speaker_driver_init(void) {
+static void speaker_driver_init(void) {
     dac_continuous_config_t dac_cfg = {
         .chan_mask = DAC_CHANNEL_MASK_CH0,
         .desc_num = 4,
@@ -30,12 +30,12 @@ void speaker_driver_init(void) {
     ESP_ERROR_CHECK(dac_continuous_enable(dac_handle));
 }
 
-void speaker_driver_play(void) {
+static void speaker_driver_play(void) {
     size_t written = 0;
     ESP_ERROR_CHECK(dac_continuous_write(dac_handle, audio_fx, audio_fx_len, &written, portMAX_DELAY));
 }
 
-void speaker_driver_deinit(void) {
+static void speaker_driver_deinit(void) {
     dac_continuous_disable(dac_handle);
     dac_continuous_del_channels(dac_handle);
 }

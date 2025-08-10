@@ -1,13 +1,22 @@
 # _Custom Datalogger_
 
-## What does Custom DataLogger do?
-This project uses a variety of custom drivers to take a temperature and humidity and display it to a website and an lcd.
-The lcd has multiple modes and can be controlled via ir remote or button and the modes are temperature, humidity, and time since last read.
-A new reading is taken every minute but can be done instantly through either the website or the ir remote. The speaker will play a sound when a reading is taken. 
-An led also shows when the system is ready (yellow means in progress, green means ready, and blinking red means critical error).
-The time of on the dht11 is also controlled via a timesetting driver
+## Overview
+Custom Datalogger is an ESP32-based embedded system that uses a set of modular, custom drivers to read and display temperature and humidity data from a DHT11 sensor. Readings are displayed on both a web interface and an LCD screen with multiple display modes. The system includes IR and button controls, audio feedback, Wi-Fi connectivity, and status LEDs to give users real-time system feedback.
 
-## Custom DataLogger contents
+## Features
+- **Sensor Data Collection:** Temperature and humidity readings using a DHT11 sensor  
+- **LCD Display Modes:** Switch between temperature, humidity, and time since last read  
+- **Control Options:** IR remote and physical button to switch display modes or trigger a reading  
+- **Web Interface:** Hosts a simple web server displaying live data and allowing manual readings  
+- **Speaker Feedback:** Plays a sound when a new reading is taken  
+- **Status LED:**  
+  - Green: Ready  
+  - Yellow: Setup in progress  
+  - Blinking Red: Critical error  
+- **Time Management:** Internal timekeeping to track time since last read, adjustable via the `timeset` driver  
+- **Auto & Manual Reads:** Automatically takes a reading every minute, or instantly on-demand via web or IR  
+
+## Project Structure
 
 The project **datalogger** contains one source file in C language [main.c](main/main.c). The file is located in folder [main](main).
 
@@ -71,3 +80,8 @@ Below is short explanation of remaining files in the project folder.
 │   └── main.c
 └── README.md                  This is the file you are currently reading
 ```
+### Special Files
+
+- `speaker/audio_data_generator.py`: Converts `untitled.wav` to a header file for embedding audio  
+- `webserver/index.html`, `style.css`, `script.js`: Embedded in the firmware for hosting the web UI  
+- `audio_data.h`: Auto-generated from `.wav` to feed data to the speaker
