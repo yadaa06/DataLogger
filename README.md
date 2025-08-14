@@ -29,7 +29,7 @@ Below is short explanation of remaining files in the project folder.
 ```
 ├── CMakeLists.txt
 ├── components
-    └── button
+│   └── button
 │       ├── CMakeLists.txt
 │       ├── button.c
 │       └── button.h
