@@ -31,6 +31,7 @@ void create_task_or_fail(TaskFunction_t task_func, const char* name, uint32_t st
     BaseType_t result = xTaskCreate(task_func, name, stack, params, priority, handle);
     if (result != pdPASS) {
         ESP_LOGE(TAG, "Failed to create %s task", name);
+        status_led_set_state(STATUS_LED_STATE_ERROR);
     } else {
         ESP_LOGI(TAG, "%s task created with priority %d", name, priority);
     }
@@ -45,6 +46,7 @@ void app_main(void) {
     vTaskDelay(pdMS_TO_TICKS(5000));
     ESP_ERROR_CHECK(timeset_driver_start_and_wait());
 
+    status_led_set_state(STATUS_LED_STATE_IN_PROGRESS);
     start_webserver();
 
     xDHT11Mutex = xSemaphoreCreateMutex();
