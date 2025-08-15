@@ -20,7 +20,6 @@
     ((value) >= ((target) - ((target) * NEC_TOLERANCE_PERCENT / 100)) && \
      (value) <= ((target) + ((target) * NEC_TOLERANCE_PERCENT / 100)))
 
-void ir_decoder_task(void* pvParameters);
 
 typedef enum {
     IR_FRAME_TYPE_DATA,
@@ -59,3 +58,6 @@ typedef struct {
     uint8_t address;
     uint8_t command;
 } ir_result_t;
+
+
+void ir_decode_task(void* pvParameters);

@@ -301,7 +301,7 @@ static const char* get_button_name(button_press_t button) {
     }
 }
 
-void ir_decoder_task(void* pvParameters) {
+void ir_decode_task(void* pvParameters) {
     (void)pvParameters;
 
     decoder_task_init();
