@@ -3,3 +3,5 @@ sdkconfig
 sdkconfig.old
 .devcontainer/
 managed_components/
+components/speaker/recorded_sound.wav
+components/speaker/audio_data.h
