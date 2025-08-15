@@ -2,7 +2,6 @@
 
 #include "irdecoder.h"
 #include "dht11_task.h"
-#include "speaker_driver.h"
 #include "driver/gpio.h"
 #include "driver/gptimer.h"
 #include "esp_log.h"
@@ -11,6 +10,7 @@
 #include "freertos/semphr.h"
 #include "lcd_task.h"
 #include "rom/ets_sys.h"
+#include "speaker_driver.h"
 #include <string.h>
 
 static const char* TAG = "IR_DRIVER";

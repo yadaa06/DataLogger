@@ -19,11 +19,11 @@ dac_continuous_handle_t dac_handle;
 static void speaker_driver_init(void) {
     dac_continuous_config_t dac_cfg = {
         .chan_mask = DAC_CHANNEL_MASK_CH0,
-        .desc_num = 4,
-        .buf_size = 1024,
-        .freq_hz = 16000,
-        .offset = 0,
-        .clk_src = DAC_DIGI_CLK_SRC_APLL,
+        .desc_num  = 4,
+        .buf_size  = 1024,
+        .freq_hz   = 16000,
+        .offset    = 0,
+        .clk_src   = DAC_DIGI_CLK_SRC_APLL,
     };
 
     ESP_ERROR_CHECK(dac_continuous_new_channels(&dac_cfg, &dac_handle));
