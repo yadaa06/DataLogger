@@ -1,7 +1,6 @@
 // lcd_i2c.h
 
-#ifndef LCD_I2C_H
-#define LCD_I2C_H
+#pragma once
 
 #include "driver/i2c_master.h"
 #include "esp_err.h"
@@ -72,5 +71,3 @@ esp_err_t lcd_i2c_clear(lcd_i2c_handle_t* lcd);
 esp_err_t lcd_i2c_set_cursor(lcd_i2c_handle_t* lcd, uint8_t col, uint8_t row);
 esp_err_t lcd_i2c_write_char(lcd_i2c_handle_t* lcd, char c);
 esp_err_t lcd_i2c_write_string(lcd_i2c_handle_t* lcd, const char* str, ...);
-
-#endif

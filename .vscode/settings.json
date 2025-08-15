@@ -28,6 +28,7 @@
     "statusled.h": "c",
     "chrono": "cpp",
     "functional": "cpp",
-    "i2s_std.h": "c"
+    "i2s_std.h": "c",
+    "event_groups.h": "c"
   }
 }

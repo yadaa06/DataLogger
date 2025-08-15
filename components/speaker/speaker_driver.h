@@ -1,7 +1,6 @@
 // speaker_driver.h
 
-#ifndef SPEAKER_DRIVER_H
-#define SPEAKER_DRIVER_H
+#pragma once
 
 #include <stdint.h>
 #include <stddef.h>
@@ -10,5 +9,3 @@
 
 void speaker_play_sound(void);
 void speaker_driver_play_task(void* pvParameters);
-
-#endif

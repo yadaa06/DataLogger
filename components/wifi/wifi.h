@@ -1,7 +1,6 @@
 // wifi.h
 
-#ifndef WIFI_H
-#define WIFI_H
+#pragma once
 
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
@@ -15,5 +14,3 @@
 
 esp_err_t wifi_driver_start_and_connect(const char* ssid, const char* pswd);
 EventGroupHandle_t wifi_driver_get_event_group(void);
-
-#endif

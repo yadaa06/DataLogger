@@ -1,7 +1,6 @@
 // statusled.h
 
-#ifndef STATUS_LED_H
-#define STATUS_LED_H
+#pragma once
 
 #include "driver/gpio.h"
 
@@ -29,5 +28,3 @@ typedef enum {
 void status_led_set_state(status_led_state_t state);
 void error_blink_task(void* pvParameters);
 esp_err_t status_led_init();
-
-#endif

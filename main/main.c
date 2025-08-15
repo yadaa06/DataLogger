@@ -62,7 +62,8 @@ void app_main(void) {
 
     ESP_LOGI(TAG, "WiFi connected successfully!\n");
     vTaskDelay(pdMS_TO_TICKS(5000));
-    setup_time();
+
+    ESP_ERROR_CHECK(timeset_driver_start_and_wait());
 
     httpd_handle_t server = start_webserver();
     if (server == NULL) {

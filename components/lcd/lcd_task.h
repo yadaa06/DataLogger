@@ -1,8 +1,7 @@
 // lcd_task.h
 
-#ifndef LCD_TASK_H
+#pragma once
 #define LCD_TASK_H
-
 #define BUTTON_UL_VALUE 14
 
 typedef enum {
@@ -14,5 +13,3 @@ typedef enum {
 
 void lcd_display_task(void *pvParameters);
 void lcd_cycle_mode(void);
-
-#endif

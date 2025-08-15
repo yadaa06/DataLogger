@@ -1,7 +1,6 @@
 // dht11_task.h
 
-#ifndef DHT11_TASK_H
-#define DHT11_TASK_H
+#pragma once
 
 #define MAXATTEMPTS 3
 #define MIN_READ_INTERVAL_US 3000000
@@ -28,5 +27,3 @@ float dht11_get_humidity(void);
 void dht11_read_task(void* pvParameters);
 void dht11_get_history(dht11_reading_t* history_buffer, uint32_t* num_readings);
 uint64_t dht11_get_last_read(void);
-
-#endif

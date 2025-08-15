@@ -1,7 +1,6 @@
 // irdecoder.h
 
-#ifndef IR_DECODER_H
-#define IR_DECODER_H
+#pragma once
 
 #include <stdint.h>
 
@@ -60,5 +59,3 @@ typedef struct {
     uint8_t address;
     uint8_t command;
 } ir_result_t;
-
-#endif

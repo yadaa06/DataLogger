@@ -1,10 +1,11 @@
 // timeset.h
 
-#ifndef TIMESET_H
-#define TIMESET_H
+#pragma once
 
-#define MAX_RETRY_COUNT 10
+#include "esp_err.h"
 
-void setup_time(void);
+enum {
+    TIME_SYNC_COMPLETE,
+};
 
-#endif
+esp_err_t timeset_driver_start_and_wait(void);
