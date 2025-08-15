@@ -89,8 +89,7 @@ def parse_wav(wav_file_path):
 def generate_c_file(output_file_path, audio_data, sample_rate):
     with open(output_file_path, "w") as f:
         f.write("// audio_data.h\n\n")
-        f.write("#ifndef AUDIO_DATA_H\n")
-        f.write("#define AUDIO_DATA_H\n\n")
+        f.write("#pragma once\n")
         f.write(f"#define SAMPLE_RATE {sample_rate}\n\n")
         f.write("uint8_t audio_fx[] = {\n\t")
 
@@ -102,8 +101,6 @@ def generate_c_file(output_file_path, audio_data, sample_rate):
                 f.write("\n\t")
         f.write("\n};\n\n")
         f.write(f"size_t audio_fx_len = {len(audio_data)};\n\n")
-
-        f.write("#endif // AUDIO_DATA_H\n")
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:

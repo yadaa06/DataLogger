@@ -2,6 +2,7 @@
 
 #include "dht11_task.h"
 #include "dht11.h"
+#include "speaker_driver.h"
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
@@ -155,6 +156,7 @@ void dht11_read_task(void* pvParameters) {
                 last_successful_read = esp_timer_get_time();
 
                 xSemaphoreGive(xDHT11Mutex);
+                speaker_play_sound();
             } else {
                 ESP_LOGE(TAG, "ERROR: dht11 read task failed to take mutex");
             }
