@@ -185,5 +185,9 @@ httpd_handle_t start_webserver() {
     ESP_ERROR_CHECK(httpd_register_uri_handler(server, &dht_data_uri));
     ESP_ERROR_CHECK(httpd_register_uri_handler(server, &dht_history_uri));
 
+    if (server != NULL) {
+        ESP_LOGI(TAG, "Server start successful");
+    }
+
     return server;
 }

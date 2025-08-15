@@ -45,23 +45,18 @@ void app_main(void) {
     vTaskDelay(pdMS_TO_TICKS(5000));
     ESP_ERROR_CHECK(timeset_driver_start_and_wait());
 
-    httpd_handle_t server = start_webserver();
-    if (server == NULL) {
-        ESP_LOGE(TAG, "Server start unsuccessful");
-        return;
-    }
-    ESP_LOGI(TAG, "Server start successful");
+    start_webserver();
 
     xDHT11Mutex = xSemaphoreCreateMutex();
     if (xDHT11Mutex == NULL) {
-        ESP_LOGE("APP_MAIN", "Failed to create DHT11 data mutex! System may be unstable.");
+        ESP_LOGE(TAG, "Failed to create DHT11 data mutex! System may be unstable.");
         return;
     }
     
     create_task_or_fail(dht11_read_task, "DHT11 Reader", 4096, NULL, DHT11_TASK_PRIORITY, &dht11_task_handle);
     create_task_or_fail(lcd_display_task, "LCD Displayer", 4096, NULL, LCD_TASK_PRIORITY, &lcd_task_handle);
     create_task_or_fail(button_press_task, "Button Task", 2048, NULL, BUTTON_TASK_PRIORITY, &button_task_handle);
-    create_task_or_fail(ir_decoder_task, "IR Decoder Task", 4096, NULL, IR_DECODER_TASK_PRIORITY, &ir_decoder_task_handle);
+    create_task_or_fail(ir_decode_task, "IR Decoder Task", 4096, NULL, IR_DECODER_TASK_PRIORITY, &ir_decoder_task_handle);
     create_task_or_fail(speaker_driver_play_task, "Speaker", 4096, NULL, SPEAKER_TASK_PRIORITY, &speaker_task_handle);
 
     status_led_set_state(STATUS_LED_STATE_READY);
