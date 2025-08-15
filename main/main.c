@@ -41,28 +41,8 @@ void app_main(void) {
     status_led_init();
     status_led_set_state(STATUS_LED_STATE_STARTING);
     
-
-    ESP_ERROR_CHECK(wifi_driver_start_and_connect("YadaWiFi", "ted785tip9109coat"));
-
-    EventGroupHandle_t wifi_event_group = wifi_driver_get_event_group();
-    if (wifi_event_group == NULL) {
-        ESP_LOGE(TAG, "WiFi event group not initialized!");
-        return;
-    }
-    ESP_LOGI(TAG, "Waiting for WiFi connection...");
-
-    status_led_set_state(STATUS_LED_STATE_IN_PROGRESS);
-    EventBits_t bits = xEventGroupWaitBits(wifi_event_group, WIFI_CONNECTED_BIT | WIFI_FAIL_BIT, pdFALSE, pdFALSE, portMAX_DELAY);
-
-    if (bits & WIFI_FAIL_BIT) {
-        ESP_LOGE(TAG, "WiFi connection failed after multiple retries. Cannot proceed.");
-        status_led_set_state(STATUS_LED_STATE_ERROR);
-        return;
-    }
-
-    ESP_LOGI(TAG, "WiFi connected successfully!\n");
+    ESP_ERROR_CHECK(wifi_driver_start_and_connect_and_wait("YadaWiFi", "ted785tip9109coat"));
     vTaskDelay(pdMS_TO_TICKS(5000));
-
     ESP_ERROR_CHECK(timeset_driver_start_and_wait());
 
     httpd_handle_t server = start_webserver();

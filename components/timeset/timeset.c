@@ -39,7 +39,6 @@ static void _setup_time() {
 esp_err_t timeset_driver_start_and_wait() {
     ESP_LOGI(TAG, "Starting timesync");
     EventGroupHandle_t temp_event_group = xEventGroupCreate();
-    #define TIME_SYNC_SUCCESS_BIT BIT0
 
     if (temp_event_group == NULL) {
         ESP_LOGE(TAG, "Failed to create Time Sync Group");

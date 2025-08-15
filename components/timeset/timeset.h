@@ -4,6 +4,8 @@
 
 #include "esp_err.h"
 
+#define TIME_SYNC_SUCCESS_BIT BIT0
+
 enum {
     TIME_SYNC_COMPLETE,
 };
