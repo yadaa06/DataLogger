@@ -3,7 +3,7 @@
 #include "lcd_task.h"
 #include "esp_log.h"
 #include "esp_timer.h"
-#include "dht11_task.h"
+#include "dht11_task.hpp"
 #include "lcd_i2c.h"
 
 static const char* TAG = "LCD_TASK";

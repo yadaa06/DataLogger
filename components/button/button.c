@@ -1,7 +1,7 @@
 // button.c
 
 #include "button.h"
-#include "dht11_task.h"
+#include "dht11_task.hpp"
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"

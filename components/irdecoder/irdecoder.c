@@ -1,7 +1,7 @@
 // irdecoder.c
 
 #include "irdecoder.h"
-#include "dht11_task.h"
+#include "dht11_task.hpp"
 #include "driver/gpio.h"
 #include "driver/gptimer.h"
 #include "esp_log.h"

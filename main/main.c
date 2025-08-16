@@ -1,7 +1,7 @@
 // main.c
 
 #include "button.h"
-#include "dht11_task.h"
+#include "dht11_task.hpp"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -49,14 +49,14 @@ void app_main(void) {
     status_led_set_state(STATUS_LED_STATE_IN_PROGRESS);
     start_webserver();
 
-    xDHT11Mutex = xSemaphoreCreateMutex();
-    if (xDHT11Mutex == NULL) {
-        ESP_LOGE(TAG, "Failed to create DHT11 data mutex! System may be unstable.");
-        return;
-    }
-    
-    create_task_or_fail(dht11_read_task, "DHT11 Reader", 4096, NULL, DHT11_TASK_PRIORITY, &dht11_task_handle);
     create_task_or_fail(lcd_display_task, "LCD Displayer", 4096, NULL, LCD_TASK_PRIORITY, &lcd_task_handle);
+
+    if (start_dht11_sensor_task(lcd_task_handle) == ESP_OK) {
+        ESP_LOGI(TAG, "DHT11 sensor task started successfully.");
+    } else {
+        ESP_LOGE(TAG, "Failed to start DHT11 sensor task.");
+    }
+
     create_task_or_fail(button_press_task, "Button Task", 2048, NULL, BUTTON_TASK_PRIORITY, &button_task_handle);
     create_task_or_fail(ir_decode_task, "IR Decoder Task", 4096, NULL, IR_DECODER_TASK_PRIORITY, &ir_decoder_task_handle);
     create_task_or_fail(speaker_driver_play_task, "Speaker", 4096, NULL, SPEAKER_TASK_PRIORITY, &speaker_task_handle);
